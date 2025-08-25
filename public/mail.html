@@ -54,6 +54,21 @@
             overflow: hidden;
             text-overflow: ellipsis;
             max-width: 600px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        .current-email-display:hover {
+            background-color: #9b59b6;
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(155, 89, 182, 0.3);
+        }
+
+        .current-email-display:active {
+            transform: translateY(0);
+            box-shadow: 0 1px 2px rgba(155, 89, 182, 0.3);
         }
 
         .header h1 {
@@ -435,6 +450,11 @@
             transition: all 0.3s ease;
         }
 
+        .dropzone::placeholder {
+            font-size: 0.75rem; /* 比正常文本小两号 (0.85rem -> 0.75rem) */
+            line-height: 1.3;
+        }
+
         .dropzone.dragover {
             border-color: #3498db;
             background-color: #f0f8ff;
@@ -586,7 +606,7 @@
         <header class="header">
             <div style="display: flex; align-items: center;">
                 <h1>Easy Outlook----令牌快捷收发邮件</h1>
-                <div id="currentEmailDisplay" class="current-email-display" style="display: none;">当前邮箱: <span id="currentEmailText"></span></div>
+                <div id="currentEmailDisplay" class="current-email-display" style="display: none;" onclick="copyCurrentEmail()" title="点击复制邮箱地址">当前邮箱: <span id="currentEmailText"></span></div>
             </div>
             <div id="statusMessage" class="status-message"></div>
         </header>
@@ -612,7 +632,7 @@
                             <input type="text" id="separatorInput" value="----" class="small-input">
                         </div>
                     </div>
-                    <textarea id="mailboxInput" placeholder="格式: email----password----client_id----refresh_token" class="dropzone"></textarea>
+                    <textarea id="mailboxInput" placeholder="支持两种格式:&#10;格式1: email----password----client_id----refresh_token&#10;格式2: email----password----refresh_token----client_id" class="dropzone"></textarea>
                     <div class="drag-hint">支持拖曳文件上传</div>
                 </div>
                 <div class="control-group" style="margin-bottom: 15px;">
@@ -625,7 +645,7 @@
                 <div class="input-group">
                     <label for="apiBaseUrl">API地址（必填）</label>
                     <input type="text" id="apiBaseUrl" placeholder="格式为https://xxxx/api" class="form-control">
-                    <div class="api-hint">说明：搭建API请参见 <a href="https://github.com/HChaoHui/msOauth2api" target="_blank"><svg class="github-icon" viewBox="0 0 16 16" width="14" height="14"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg> msOauth2api</a> </div>
+                    <div class="api-hint">说明：搭建API请参见 <a href="https://github.com/hmhm2022/msOauth2api" target="_blank"><svg class="github-icon" viewBox="0 0 16 16" width="14" height="14"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg> msOauth2api</a> </div>
                 </div>
                 <div class="input-group">
                     <label for="apiPassword">API密码（可选）</label>
@@ -686,9 +706,11 @@
                         <button onclick="fetchEmail()">获取最新邮件</button>
                     </div>
                     <div class="control-group" style="margin-bottom: 0;">
+                        <button onclick="checkTokenInfo()">检测Token信息</button>
                         <button class="secondary" onclick="clearEmailDisplay()">清除显示</button>
                         <button class="warning" onclick="clearInbox()">清空收件箱</button>
                         <button class="warning" onclick="clearJunk()">清空垃圾箱</button>
+                        <button class="warning" onclick="deleteSelectedEmail()">删除选中邮件</button>
                     </div>
                 </div>
             </div>
@@ -698,6 +720,8 @@
                 <div class="tab active" onclick="switchTab('emailTab')">邮件内容</div>
                 <div class="tab" onclick="switchTab('rawTab')">JSON格式</div>
                 <div class="tab" onclick="switchTab('sendMailTab')">发送邮件</div>
+                <div class="tab" onclick="switchTab('tokenInfoTab')">Token信息</div>
+                <div class="tab" onclick="switchTab('mailManageTab')">邮件管理</div>
             </div>
 
             <!-- 邮件内容区域 -->
@@ -759,6 +783,132 @@
                     <div id="sendMailResult" style="margin-top: 20px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; display: none;">
                         <h3>发送结果</h3>
                         <pre id="sendMailResultContent" style="white-space: pre-wrap; font-family: monospace;"></pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Token信息标签页 -->
+            <div id="tokenInfoTab" class="email-container" style="display: none;">
+                <div style="padding: 20px;">
+                    <h2 style="margin-bottom: 20px;">Token信息检测</h2>
+                    <div class="control-group" style="margin-bottom: 20px;">
+                        <button onclick="checkTokenInfo()">检测当前邮箱Token信息</button>
+                        <button onclick="clearTokenInfo()" class="secondary">清除显示</button>
+                    </div>
+
+                    <div id="tokenInfoResult" style="display: none;">
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 4px; margin-bottom: 20px;">
+                            <h3 style="margin-bottom: 15px; color: #333;">Token基本信息</h3>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                                <div>
+                                    <strong>邮箱地址:</strong> <span id="tokenEmail">-</span>
+                                </div>
+                                <div>
+                                    <strong>主要模式:</strong> <span id="tokenPrimaryMode">-</span>
+                                </div>
+                                <div>
+                                    <strong>支持的模式:</strong> <span id="tokenSupportedModes">-</span>
+                                </div>
+                                <div>
+                                    <strong>检测时间:</strong> <span id="tokenTimestamp">-</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="background: #e8f5e8; padding: 15px; border-radius: 4px; margin-bottom: 20px;">
+                            <h3 style="margin-bottom: 15px; color: #2d5a2d;">功能支持情况</h3>
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+                                <div><span id="featureReadEmails">❌</span> 读取邮件</div>
+                                <div><span id="featureDeleteEmails">❌</span> 删除邮件</div>
+                                <div><span id="featureSendEmails">❌</span> 发送邮件</div>
+                                <div><span id="featureClearInbox">❌</span> 清空收件箱</div>
+                                <div><span id="featureClearJunk">❌</span> 清空垃圾箱</div>
+                            </div>
+                        </div>
+
+                        <div style="background: #fff3cd; padding: 15px; border-radius: 4px; margin-bottom: 20px;">
+                            <h3 style="margin-bottom: 15px; color: #856404;">使用建议</h3>
+                            <ul id="tokenRecommendations" style="margin: 0; padding-left: 20px;">
+                                <!-- 建议将通过JS动态添加 -->
+                            </ul>
+                        </div>
+
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 4px;">
+                            <h3 style="margin-bottom: 15px; color: #333;">详细权限信息</h3>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                                <div>
+                                    <h4 style="color: #0066cc; margin-bottom: 10px;">Graph API权限</h4>
+                                    <div id="graphApiPermissions">
+                                        <div>支持状态: <span id="graphApiSupported">-</span></div>
+                                        <div>Mail.ReadWrite: <span id="graphMailReadWrite">-</span></div>
+                                        <div>Mail.Read: <span id="graphMailRead">-</span></div>
+                                        <div>User.Read: <span id="graphUserRead">-</span></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h4 style="color: #cc6600; margin-bottom: 10px;">IMAP权限</h4>
+                                    <div id="imapPermissions">
+                                        <div>支持状态: <span id="imapSupported">-</span></div>
+                                        <div>IMAP访问: <span id="imapAccess">-</span></div>
+                                        <div>POP访问: <span id="popAccess">-</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 邮件管理标签页 -->
+            <div id="mailManageTab" class="email-container" style="display: none;">
+                <div style="padding: 20px;">
+                    <h2 style="margin-bottom: 20px;">邮件管理功能</h2>
+
+                    <!-- 删除指定邮件区域 -->
+                    <div style="background: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 15px; margin-bottom: 20px;">
+                        <h3 style="margin-bottom: 15px; color: #e74c3c;">删除指定邮件</h3>
+                        <div class="input-group">
+                            <label for="deleteMailId">邮件ID (从邮件列表中获取)</label>
+                            <input type="text" id="deleteMailId" placeholder="输入要删除的邮件ID" class="form-control">
+                            <div style="font-size: 0.8rem; color: #666; margin-top: 5px;">
+                                提示: 可以从邮件列表中点击邮件查看其ID，或在JSON格式标签页中查看完整的邮件ID信息
+                            </div>
+                        </div>
+                        <div class="control-group" style="margin-top: 15px;">
+                            <button onclick="deleteMailById()" class="warning">删除邮件</button>
+                            <button onclick="fillSelectedEmailId()" class="secondary">使用选中邮件ID</button>
+                        </div>
+                        <div id="deleteMailResult" style="margin-top: 15px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; display: none;">
+                            <h4>删除结果</h4>
+                            <pre id="deleteMailResultContent" style="white-space: pre-wrap; font-family: monospace; margin: 0;"></pre>
+                        </div>
+                    </div>
+
+                    <!-- 批量操作区域 -->
+                    <div style="background: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 15px; margin-bottom: 20px;">
+                        <h3 style="margin-bottom: 15px; color: #f39c12;">批量操作</h3>
+                        <div class="control-group">
+                            <button onclick="clearInboxWithStats()" class="warning">清空收件箱 (显示详细统计)</button>
+                            <button onclick="clearJunkWithStats()" class="warning">清空垃圾箱 (显示详细统计)</button>
+                        </div>
+                        <div id="batchOperationResult" style="margin-top: 15px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; display: none;">
+                            <h4>操作结果</h4>
+                            <div id="batchOperationStats" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 10px;">
+                                <div><strong>使用模式:</strong> <span id="batchMode">-</span></div>
+                                <div><strong>总邮件数:</strong> <span id="batchTotal">-</span></div>
+                                <div><strong>成功删除:</strong> <span id="batchDeleted">-</span></div>
+                                <div><strong>删除失败:</strong> <span id="batchFailed">-</span></div>
+                            </div>
+                            <pre id="batchOperationDetails" style="white-space: pre-wrap; font-family: monospace; margin: 0; font-size: 0.9rem;"></pre>
+                        </div>
+                    </div>
+
+                    <!-- 邮件信息显示区域 -->
+                    <div style="background: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 15px;">
+                        <h3 style="margin-bottom: 15px; color: #3498db;">当前选中邮件信息</h3>
+                        <div id="selectedEmailInfo">
+                            <div style="color: #666; font-style: italic;">请从邮件列表中选择一封邮件</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -868,7 +1018,7 @@
 
                             // 更新占位符文本以反映当前分隔符
                             const separator = document.getElementById('separatorInput').value || '----';
-                            dropzone.placeholder = `格式: email${separator}password${separator}client_id${separator}refresh_token`;
+                            dropzone.placeholder = `支持两种格式:\n格式1: email${separator}password${separator}client_id${separator}refresh_token\n格式2: email${separator}password${separator}refresh_token${separator}client_id`;
 
                             setStatusMessage('文件已加载，请点击"添加邮箱"进行解析', 'success');
                         };
@@ -886,7 +1036,7 @@
         // 更新文本区域的占位符，反映当前分隔符
         function updatePlaceholder() {
             const separator = document.getElementById('separatorInput').value || '----';
-            document.getElementById('mailboxInput').placeholder = `格式: email${separator}password${separator}client_id${separator}refresh_token`;
+            document.getElementById('mailboxInput').placeholder = `支持两种格式:\n格式1: email${separator}password${separator}client_id${separator}refresh_token\n格式2: email${separator}password${separator}refresh_token${separator}client_id`;
         }
 
         // 切换设置区域的折叠/展开状态
@@ -956,7 +1106,7 @@
 
                 // 更新占位符文本以反映当前分隔符
                 const separator = document.getElementById('separatorInput').value || '----';
-                document.getElementById('mailboxInput').placeholder = `格式: email${separator}password${separator}client_id${separator}refresh_token`;
+                document.getElementById('mailboxInput').placeholder = `支持两种格式:\n格式1: email${separator}password${separator}client_id${separator}refresh_token\n格式2: email${separator}password${separator}refresh_token${separator}client_id`;
 
                 setStatusMessage('文件已加载，请点击"添加邮箱"进行解析', 'success');
             };
@@ -985,6 +1135,8 @@
             const lines = input.split('\n').filter(line => line.trim() !== '');
             const newMailboxes = [];
             let errorCount = 0;
+            let format1Count = 0; // 格式1计数：email----password----client_id----refresh_token
+            let format2Count = 0; // 格式2计数：email----password----refresh_token----client_id
 
             for (const line of lines) {
                 const parts = line.trim().split(separator);
@@ -993,12 +1145,49 @@
                     continue;
                 }
 
-                newMailboxes.push({
-                    email: parts[0],
-                    password: parts[1],
-                    client_id: parts[2],
-                    refresh_token: parts[3]
-                });
+                // 检测格式类型
+                // 通过检查第3个和第4个字段的特征来判断格式
+                // client_id 通常包含字母和数字，且较长
+                // refresh_token 通常更长，包含特殊字符如 . - _ 等
+                const field3 = parts[2];
+                const field4 = parts[3];
+
+                let isFormat1 = false; // email----password----client_id----refresh_token
+                let isFormat2 = false; // email----password----refresh_token----client_id
+
+                // 判断逻辑：
+                // 1. 如果第3个字段看起来像client_id（较短，主要是字母数字），第4个字段像refresh_token（很长，包含特殊字符）
+                // 2. 如果第3个字段看起来像refresh_token（很长，包含特殊字符），第4个字段像client_id（较短）
+
+                if (field3.length < 100 && field4.length > 100 && field4.includes('.')) {
+                    // 格式1：email----password----client_id----refresh_token
+                    isFormat1 = true;
+                    format1Count++;
+                } else if (field3.length > 100 && field3.includes('.') && field4.length < 100) {
+                    // 格式2：email----password----refresh_token----client_id
+                    isFormat2 = true;
+                    format2Count++;
+                } else {
+                    // 无法确定格式，尝试默认格式1
+                    isFormat1 = true;
+                    format1Count++;
+                }
+
+                if (isFormat1) {
+                    newMailboxes.push({
+                        email: parts[0],
+                        password: parts[1],
+                        client_id: parts[2],
+                        refresh_token: parts[3]
+                    });
+                } else if (isFormat2) {
+                    newMailboxes.push({
+                        email: parts[0],
+                        password: parts[1],
+                        client_id: parts[3],
+                        refresh_token: parts[2]
+                    });
+                }
             }
 
             if (newMailboxes.length === 0) {
@@ -1011,8 +1200,17 @@
             updateMailboxList();
             saveMailboxesToStorage();
 
-            const message = `已添加 ${newMailboxes.length} 个邮箱` +
-                            (errorCount > 0 ? `，${errorCount} 个格式错误被忽略` : '');
+            let message = `已添加 ${newMailboxes.length} 个邮箱`;
+            if (format1Count > 0 && format2Count > 0) {
+                message += ` (格式1: ${format1Count}个, 格式2: ${format2Count}个)`;
+            } else if (format1Count > 0) {
+                message += ` (格式1: email-password-client_id-refresh_token)`;
+            } else if (format2Count > 0) {
+                message += ` (格式2: email-password-refresh_token-client_id)`;
+            }
+            if (errorCount > 0) {
+                message += `，${errorCount} 个格式错误被忽略`;
+            }
             setStatusMessage(message, 'success');
 
             // 清空输入框
@@ -1425,9 +1623,23 @@
                 date.className = 'email-item-date';
                 date.textContent = new Date(email.date || email.timestamp || 0).toLocaleString();
 
+                // 添加邮件ID和模式信息显示
+                const emailInfo = document.createElement('div');
+                emailInfo.className = 'email-item-info';
+                emailInfo.style.fontSize = '0.7rem';
+                emailInfo.style.color = '#888';
+                emailInfo.style.marginTop = '3px';
+
+                const emailId = email.id || email.messageId || 'N/A';
+                const emailMode = email.mode || 'unknown';
+                const modeColor = emailMode === 'graph' ? '#0066cc' : emailMode === 'imap' ? '#cc6600' : '#666';
+
+                emailInfo.innerHTML = `ID: ${emailId.length > 30 ? emailId.substring(0, 30) + '...' : emailId} | <span style="color: ${modeColor}; font-weight: bold;">${emailMode.toUpperCase()}</span>`;
+
                 item.appendChild(subject);
                 item.appendChild(from);
                 item.appendChild(date);
+                item.appendChild(emailInfo);
                 listElement.appendChild(item);
             });
         }
@@ -1477,6 +1689,9 @@
 
             // 切换到邮件内容标签页
             switchTab('emailTab');
+
+            // 更新邮件管理标签页中的选中邮件信息
+            updateSelectedEmailInfo(email);
         }
 
         // 显示HTML邮件内容
@@ -1850,6 +2065,520 @@
                 document.getElementById('sendMailResultContent').textContent = error.toString();
             }
         }
+
+        // 更新选中邮件信息显示
+        function updateSelectedEmailInfo(email) {
+            const infoElement = document.getElementById('selectedEmailInfo');
+            if (!email) {
+                infoElement.innerHTML = '<div style="color: #666; font-style: italic;">请从邮件列表中选择一封邮件</div>';
+                return;
+            }
+
+            const emailId = email.id || email.messageId || 'N/A';
+            const emailMode = email.mode || 'unknown';
+            const modeColor = emailMode === 'graph' ? '#0066cc' : emailMode === 'imap' ? '#cc6600' : '#666';
+
+            infoElement.innerHTML = `
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                    <div><strong>邮件主题:</strong> ${email.subject || '无主题'}</div>
+                    <div><strong>发件人:</strong> ${email.from || email.send || 'Unknown'}</div>
+                    <div><strong>接收时间:</strong> ${new Date(email.date || email.timestamp || 0).toLocaleString()}</div>
+                    <div><strong>认证模式:</strong> <span style="color: ${modeColor}; font-weight: bold;">${emailMode.toUpperCase()}</span></div>
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <strong>邮件ID:</strong>
+                    <input type="text" value="${emailId}" readonly style="width: 100%; padding: 5px; border: 1px solid #ddd; border-radius: 3px; background: #f9f9f9; font-family: monospace; font-size: 0.9rem;">
+                </div>
+                ${email.messageId && email.messageId !== emailId ? `
+                <div style="margin-bottom: 10px;">
+                    <strong>Message-ID:</strong>
+                    <input type="text" value="${email.messageId}" readonly style="width: 100%; padding: 5px; border: 1px solid #ddd; border-radius: 3px; background: #f9f9f9; font-family: monospace; font-size: 0.9rem;">
+                </div>
+                ` : ''}
+                ${email._imapSeqno ? `
+                <div style="margin-bottom: 10px;">
+                    <strong>IMAP序列号:</strong> ${email._imapSeqno}
+                </div>
+                ` : ''}
+            `;
+        }
+
+        // 检测Token信息
+        async function checkTokenInfo() {
+            if (selectedMailboxIndex === -1) {
+                setStatusMessage('请先选择一个邮箱', 'error');
+                return;
+            }
+
+            const mailbox = mailboxes[selectedMailboxIndex];
+            setStatusMessage('正在检测Token信息...', 'loading');
+
+            const apiPassword = document.getElementById('apiPassword').value;
+
+            try {
+                // 获取API基础地址
+                const apiBaseUrl = document.getElementById('apiBaseUrl').value.trim();
+
+                // 检查用户是否填写了API地址
+                if (!apiBaseUrl) {
+                    throw new Error('请先填写API地址后再尝试');
+                }
+
+                // 使用GET请求
+                let apiUrl = `${apiBaseUrl}/token-info?refresh_token=${encodeURIComponent(mailbox.refresh_token)}&client_id=${encodeURIComponent(mailbox.client_id)}&email=${encodeURIComponent(mailbox.email)}`;
+
+                // 如果有设置密码，添加到URL中
+                if (apiPassword) {
+                    apiUrl += `&password=${encodeURIComponent(apiPassword)}`;
+                }
+
+                console.log('发送Token检测请求到:', apiUrl);
+                const response = await fetch(apiUrl);
+
+                if (!response.ok) {
+                    throw new Error(`API请求失败: ${response.status} ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                console.log('收到的Token信息:', data);
+
+                if (data.success && data.tokenInfo) {
+                    displayTokenInfo(data.tokenInfo);
+                    setStatusMessage('Token信息检测成功', 'success');
+                    switchTab('tokenInfoTab');
+                } else {
+                    throw new Error(data.error || 'Token信息检测失败');
+                }
+            } catch (error) {
+                console.error('Token信息检测失败:', error);
+                setStatusMessage('Token信息检测失败: ' + error.message, 'error');
+            }
+        }
+
+        // 显示Token信息
+        function displayTokenInfo(tokenInfo) {
+            // 基本信息
+            document.getElementById('tokenEmail').textContent = tokenInfo.email || 'N/A';
+            document.getElementById('tokenPrimaryMode').textContent = tokenInfo.primaryMode || 'unknown';
+            document.getElementById('tokenSupportedModes').textContent = tokenInfo.supportedModes.join(', ') || 'none';
+            document.getElementById('tokenTimestamp').textContent = new Date().toLocaleString();
+
+            // 功能支持情况
+            document.getElementById('featureReadEmails').textContent = tokenInfo.features.readEmails ? '✅' : '❌';
+            document.getElementById('featureDeleteEmails').textContent = tokenInfo.features.deleteEmails ? '✅' : '❌';
+            document.getElementById('featureSendEmails').textContent = tokenInfo.features.sendEmails ? '✅' : '❌';
+            document.getElementById('featureClearInbox').textContent = tokenInfo.features.clearInbox ? '✅' : '❌';
+            document.getElementById('featureClearJunk').textContent = tokenInfo.features.clearJunk ? '✅' : '❌';
+
+            // 使用建议
+            const recommendationsList = document.getElementById('tokenRecommendations');
+            recommendationsList.innerHTML = '';
+            if (tokenInfo.recommendations && tokenInfo.recommendations.length > 0) {
+                tokenInfo.recommendations.forEach(rec => {
+                    const li = document.createElement('li');
+                    li.textContent = rec;
+                    li.style.marginBottom = '5px';
+                    recommendationsList.appendChild(li);
+                });
+            } else {
+                const li = document.createElement('li');
+                li.textContent = '暂无特殊建议';
+                li.style.color = '#666';
+                recommendationsList.appendChild(li);
+            }
+
+            // Graph API权限
+            const graphCap = tokenInfo.capabilities.graphApi;
+            document.getElementById('graphApiSupported').textContent = graphCap.supported ? '✅ 支持' : '❌ 不支持';
+            document.getElementById('graphApiSupported').style.color = graphCap.supported ? '#27ae60' : '#e74c3c';
+
+            if (graphCap.permissions) {
+                document.getElementById('graphMailReadWrite').textContent = graphCap.permissions.mailReadWrite ? '✅' : '❌';
+                document.getElementById('graphMailRead').textContent = graphCap.permissions.mailRead ? '✅' : '❌';
+                document.getElementById('graphUserRead').textContent = graphCap.permissions.userRead ? '✅' : '❌';
+            }
+
+            // IMAP权限
+            const imapCap = tokenInfo.capabilities.imap;
+            document.getElementById('imapSupported').textContent = imapCap.supported ? '✅ 支持' : '❌ 不支持';
+            document.getElementById('imapSupported').style.color = imapCap.supported ? '#27ae60' : '#e74c3c';
+
+            if (imapCap.permissions) {
+                document.getElementById('imapAccess').textContent = imapCap.permissions.imapAccess ? '✅' : '❌';
+                document.getElementById('popAccess').textContent = imapCap.permissions.popAccess ? '✅' : '❌';
+            }
+
+            // 显示Token信息区域
+            document.getElementById('tokenInfoResult').style.display = 'block';
+        }
+
+        // 清除Token信息显示
+        function clearTokenInfo() {
+            document.getElementById('tokenInfoResult').style.display = 'none';
+            setStatusMessage('已清除Token信息显示', 'success');
+        }
+
+        // 根据邮件ID删除邮件
+        async function deleteMailById() {
+            if (selectedMailboxIndex === -1) {
+                setStatusMessage('请先选择一个邮箱', 'error');
+                return;
+            }
+
+            const mailId = document.getElementById('deleteMailId').value.trim();
+            if (!mailId) {
+                setStatusMessage('请输入要删除的邮件ID', 'error');
+                return;
+            }
+
+            if (!confirm(`确定要删除邮件ID为 "${mailId}" 的邮件吗？此操作不可恢复！`)) {
+                return;
+            }
+
+            const mailbox = mailboxes[selectedMailboxIndex];
+            setStatusMessage('正在删除邮件...', 'loading');
+
+            const apiPassword = document.getElementById('apiPassword').value;
+
+            try {
+                // 获取API基础地址
+                const apiBaseUrl = document.getElementById('apiBaseUrl').value.trim();
+
+                // 检查用户是否填写了API地址
+                if (!apiBaseUrl) {
+                    throw new Error('请先填写API地址后再尝试');
+                }
+
+                // 使用GET请求
+                let apiUrl = `${apiBaseUrl}/delete-mail?refresh_token=${encodeURIComponent(mailbox.refresh_token)}&client_id=${encodeURIComponent(mailbox.client_id)}&email=${encodeURIComponent(mailbox.email)}&message_id=${encodeURIComponent(mailId)}&confirm=YES`;
+
+                // 如果有设置密码，添加到URL中
+                if (apiPassword) {
+                    apiUrl += `&password=${encodeURIComponent(apiPassword)}`;
+                }
+
+                console.log('发送删除邮件请求到:', apiUrl);
+                const response = await fetch(apiUrl);
+
+                if (!response.ok) {
+                    throw new Error(`API请求失败: ${response.status} ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                console.log('收到的删除结果:', data);
+
+                // 显示删除结果
+                document.getElementById('deleteMailResult').style.display = 'block';
+                document.getElementById('deleteMailResultContent').textContent = JSON.stringify(data, null, 2);
+
+                if (data.success) {
+                    setStatusMessage('邮件删除成功', 'success');
+                    // 清空输入框
+                    document.getElementById('deleteMailId').value = '';
+                    // 刷新邮件列表
+                    loadEmailList();
+                } else {
+                    setStatusMessage('邮件删除失败: ' + (data.error || '未知错误'), 'error');
+                }
+            } catch (error) {
+                console.error('删除邮件失败:', error);
+                setStatusMessage('删除邮件失败: ' + error.message, 'error');
+                document.getElementById('deleteMailResult').style.display = 'block';
+                document.getElementById('deleteMailResultContent').textContent = error.toString();
+            }
+        }
+
+        // 使用选中邮件的ID填充删除输入框
+        function fillSelectedEmailId() {
+            if (selectedEmailIndex === -1 || emailListData.length === 0) {
+                setStatusMessage('请先从邮件列表中选择一封邮件', 'error');
+                return;
+            }
+
+            const email = emailListData[selectedEmailIndex];
+            // 优先使用真正的Message-ID
+            const emailId = email.messageId || email.id || '';
+
+            if (emailId) {
+                document.getElementById('deleteMailId').value = emailId;
+                setStatusMessage('已填充选中邮件的Message-ID', 'success');
+                console.log(`填充的Message-ID: ${emailId}`);
+            } else {
+                setStatusMessage('选中邮件没有有效的ID', 'error');
+            }
+        }
+
+        // 删除选中的邮件
+        async function deleteSelectedEmail() {
+            if (selectedEmailIndex === -1 || emailListData.length === 0) {
+                setStatusMessage('请先从邮件列表中选择一封邮件', 'error');
+                return;
+            }
+
+            const email = emailListData[selectedEmailIndex];
+            // 优先使用真正的Message-ID进行删除，而不是我们生成的ID
+            const emailId = email.messageId || email.id || '';
+
+            if (!emailId) {
+                setStatusMessage('选中邮件没有有效的ID，无法删除', 'error');
+                return;
+            }
+
+            console.log(`准备删除邮件，使用ID: ${emailId}`);
+
+            if (!confirm(`确定要删除选中的邮件吗？\n主题: ${email.subject || '无主题'}\n发件人: ${email.from || email.send || 'Unknown'}\n\n此操作不可恢复！`)) {
+                return;
+            }
+
+            const mailbox = mailboxes[selectedMailboxIndex];
+            setStatusMessage('正在删除选中邮件...', 'loading');
+
+            const apiPassword = document.getElementById('apiPassword').value;
+
+            try {
+                // 获取API基础地址
+                const apiBaseUrl = document.getElementById('apiBaseUrl').value.trim();
+
+                // 检查用户是否填写了API地址
+                if (!apiBaseUrl) {
+                    throw new Error('请先填写API地址后再尝试');
+                }
+
+                // 使用process-inbox API进行单个邮件删除
+                let apiUrl = `${apiBaseUrl}/process-inbox?refresh_token=${encodeURIComponent(mailbox.refresh_token)}&client_id=${encodeURIComponent(mailbox.client_id)}&email=${encodeURIComponent(mailbox.email)}&action=delete_single&message_id=${encodeURIComponent(emailId)}&confirm=YES`;
+
+                // 如果有设置密码，添加到URL中
+                if (apiPassword) {
+                    apiUrl += `&password=${encodeURIComponent(apiPassword)}`;
+                }
+
+                console.log('发送删除选中邮件请求到:', apiUrl);
+                console.log('使用process-inbox API删除单个邮件');
+                const response = await fetch(apiUrl);
+
+                if (!response.ok) {
+                    throw new Error(`API请求失败: ${response.status} ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                console.log('收到的删除结果:', data);
+
+                if (data.success) {
+                    setStatusMessage('选中邮件删除成功', 'success');
+                    // 刷新邮件列表
+                    loadEmailList();
+                    // 清除邮件显示
+                    clearEmailDisplay();
+                } else {
+                    setStatusMessage('邮件删除失败: ' + (data.error || '未知错误'), 'error');
+                }
+            } catch (error) {
+                console.error('删除选中邮件失败:', error);
+                setStatusMessage('删除选中邮件失败: ' + error.message, 'error');
+            }
+        }
+
+        // 带统计信息的清空收件箱
+        async function clearInboxWithStats() {
+            if (selectedMailboxIndex === -1) {
+                setStatusMessage('请先选择一个邮箱', 'error');
+                return;
+            }
+
+            if (!confirm('确定要清空所选邮箱的收件箱吗？此操作不可恢复！')) {
+                return;
+            }
+
+            const mailbox = mailboxes[selectedMailboxIndex];
+            setStatusMessage('正在清空收件箱...', 'loading');
+
+            const apiPassword = document.getElementById('apiPassword').value;
+
+            try {
+                // 获取API基础地址
+                const apiBaseUrl = document.getElementById('apiBaseUrl').value.trim();
+
+                // 检查用户是否填写了API地址
+                if (!apiBaseUrl) {
+                    throw new Error('请先填写API地址后再尝试');
+                }
+
+                // 使用GET请求
+                let apiUrl = `${apiBaseUrl}/process-inbox?refresh_token=${encodeURIComponent(mailbox.refresh_token)}&client_id=${encodeURIComponent(mailbox.client_id)}&email=${encodeURIComponent(mailbox.email)}`;
+
+                // 如果有设置密码，添加到URL中
+                if (apiPassword) {
+                    apiUrl += `&password=${encodeURIComponent(apiPassword)}`;
+                }
+
+                console.log('发送清空收件箱请求到:', apiUrl);
+                const response = await fetch(apiUrl);
+
+                if (!response.ok) {
+                    throw new Error(`API请求失败: ${response.status} ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                console.log('收到的清空结果:', data);
+
+                // 显示批量操作结果
+                displayBatchOperationResult(data, '收件箱清空');
+
+                // 清除邮件显示
+                clearEmailDisplay();
+
+                // 清空邮件列表
+                emailListData = [];
+                updateEmailList();
+
+                setStatusMessage('收件箱清空成功', 'success');
+                switchTab('mailManageTab');
+            } catch (error) {
+                console.error('清空收件箱失败:', error);
+                setStatusMessage('清空收件箱失败: ' + error.message, 'error');
+            }
+        }
+
+        // 带统计信息的清空垃圾箱
+        async function clearJunkWithStats() {
+            if (selectedMailboxIndex === -1) {
+                setStatusMessage('请先选择一个邮箱', 'error');
+                return;
+            }
+
+            if (!confirm('确定要清空所选邮箱的垃圾箱吗？此操作不可恢复！')) {
+                return;
+            }
+
+            const mailbox = mailboxes[selectedMailboxIndex];
+            setStatusMessage('正在清空垃圾箱...', 'loading');
+
+            const apiPassword = document.getElementById('apiPassword').value;
+
+            try {
+                // 获取API基础地址
+                const apiBaseUrl = document.getElementById('apiBaseUrl').value.trim();
+
+                // 检查用户是否填写了API地址
+                if (!apiBaseUrl) {
+                    throw new Error('请先填写API地址后再尝试');
+                }
+
+                // 使用GET请求
+                let apiUrl = `${apiBaseUrl}/process-junk?refresh_token=${encodeURIComponent(mailbox.refresh_token)}&client_id=${encodeURIComponent(mailbox.client_id)}&email=${encodeURIComponent(mailbox.email)}`;
+
+                // 如果有设置密码，添加到URL中
+                if (apiPassword) {
+                    apiUrl += `&password=${encodeURIComponent(apiPassword)}`;
+                }
+
+                console.log('发送清空垃圾箱请求到:', apiUrl);
+                const response = await fetch(apiUrl);
+
+                if (!response.ok) {
+                    throw new Error(`API请求失败: ${response.status} ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                console.log('收到的清空结果:', data);
+
+                // 显示批量操作结果
+                displayBatchOperationResult(data, '垃圾箱清空');
+
+                // 清除邮件显示
+                clearEmailDisplay();
+
+                // 清空邮件列表
+                emailListData = [];
+                updateEmailList();
+
+                setStatusMessage('垃圾箱清空成功', 'success');
+                switchTab('mailManageTab');
+            } catch (error) {
+                console.error('清空垃圾箱失败:', error);
+                setStatusMessage('清空垃圾箱失败: ' + error.message, 'error');
+            }
+        }
+
+        // 显示批量操作结果
+        function displayBatchOperationResult(data, operationType) {
+            const resultElement = document.getElementById('batchOperationResult');
+
+            // 更新统计信息
+            document.getElementById('batchMode').textContent = data.mode || 'unknown';
+            document.getElementById('batchMode').style.color = data.mode === 'graph' ? '#0066cc' : data.mode === 'imap' ? '#cc6600' : '#666';
+
+            if (data.stats) {
+                document.getElementById('batchTotal').textContent = data.stats.total || '0';
+                document.getElementById('batchDeleted').textContent = data.stats.deleted || '0';
+                document.getElementById('batchFailed').textContent = data.stats.failed || '0';
+            } else {
+                document.getElementById('batchTotal').textContent = '-';
+                document.getElementById('batchDeleted').textContent = '-';
+                document.getElementById('batchFailed').textContent = '-';
+            }
+
+            // 显示详细信息
+            document.getElementById('batchOperationDetails').textContent = `${operationType}操作完成\n\n${JSON.stringify(data, null, 2)}`;
+
+            // 显示结果区域
+            resultElement.style.display = 'block';
+        }
+
+        // 复制当前邮箱地址到剪贴板
+        function copyCurrentEmail() {
+            if (selectedMailboxIndex === -1 || !mailboxes[selectedMailboxIndex]) {
+                setStatusMessage('没有选中的邮箱', 'error');
+                return;
+            }
+
+            const email = mailboxes[selectedMailboxIndex].email;
+
+            // 使用现代的 Clipboard API
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(email).then(() => {
+                    setStatusMessage(`已复制邮箱地址: ${email}`, 'success');
+                }).catch(err => {
+                    console.error('复制失败:', err);
+                    fallbackCopyTextToClipboard(email);
+                });
+            } else {
+                // 降级方案
+                fallbackCopyTextToClipboard(email);
+            }
+        }
+
+        // 降级复制方案
+        function fallbackCopyTextToClipboard(text) {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+
+            // 避免滚动到底部
+            textArea.style.top = "0";
+            textArea.style.left = "0";
+            textArea.style.position = "fixed";
+            textArea.style.opacity = "0";
+
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    setStatusMessage(`已复制邮箱地址: ${text}`, 'success');
+                } else {
+                    setStatusMessage('复制失败，请手动复制', 'error');
+                }
+            } catch (err) {
+                console.error('降级复制失败:', err);
+                setStatusMessage('复制失败，请手动复制', 'error');
+            }
+
+            document.body.removeChild(textArea);
+        }
+
+
     </script>
 </body>
 </html>

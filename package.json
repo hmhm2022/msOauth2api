@@ -1,9 +1,22 @@
 {
+  "name": "msOauth2api",
+  "version": "1.0.0",
+  "description": "微软 OAuth2 API 无服务器版本",
+  "main": "test-api.js",
+  "scripts": {
+    "start": "node test-api.js",
+    "dev": "node test-api.js",
+    "test": "node test-api.js",
+    "vercel-dev": "vercel dev"
+  },
   "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.1",
+    "express": "^5.1.0",
     "imap": "^0.8.19",
     "mailin": "^3.0.4",
     "mailparser": "^3.6.5",
-    "nodemailer": "^6.9.16",
-    "node-imap": "^0.9.6"
+    "node-imap": "^0.9.6",
+    "nodemailer": "^6.9.16"
   }
 }

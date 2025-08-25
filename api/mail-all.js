@@ -82,7 +82,8 @@ async function get_emails(access_token, mailbox) {
     }
 
     try {
-        const response = await fetch(`https://graph.microsoft.com/v1.0/me/mailFolders/${mailbox}/messages?$top=10000`, {
+        // 添加$select参数以获取internetMessageId字段
+        const response = await fetch(`https://graph.microsoft.com/v1.0/me/mailFolders/${mailbox}/messages?$top=10000&$select=id,from,subject,bodyPreview,body,createdDateTime,internetMessageId`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
@@ -101,11 +102,14 @@ async function get_emails(access_token, mailbox) {
 
         const response_emails = emails.map(item => {
             return {
+                id: item['id'],
+                messageId: item['internetMessageId'] || item['id'], // 完整的Message-ID
                 send: item['from']['emailAddress']['address'],
                 subject: item['subject'],
                 text: item['bodyPreview'],
                 html: item['body']['content'],
                 date: item['createdDateTime'],
+                mode: 'graph' // 标识使用的模式
             }
         })
 
@@ -198,6 +202,14 @@ module.exports = async (req, res) => {
                     });
                 });
 
+                // 检查是否有邮件
+                if (!results || results.length === 0) {
+                    console.log(`${mailbox} 中没有邮件`);
+                    imap.end();
+                    return;
+                }
+
+                console.log(`${mailbox} 中找到 ${results.length} 封邮件`);
                 const f = imap.fetch(results, { bodies: "" });
 
                 f.on("message", (msg, seqno) => {
@@ -205,11 +217,15 @@ module.exports = async (req, res) => {
                         simpleParser(stream, (err, mail) => {
                             if (err) throw err;
                             const data = {
+                                id: `imap_${seqno}_${Date.now()}`, // 生成唯一ID
+                                messageId: mail.messageId || mail.headers.get('message-id') || `imap_${seqno}_${Date.now()}`, // 完整的Message-ID
                                 send: mail.from.text,
                                 subject: mail.subject,
                                 text: mail.text,
                                 html: mail.html,
                                 date: mail.date,
+                                mode: 'imap', // 标识使用的模式
+                                _imapSeqno: seqno // 保存IMAP序列号用于删除操作
                             };
 
                             emailList.push(data);

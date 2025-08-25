@@ -1,0 +1,69 @@
+# 项目特定文件
+config.txt
+microsoft_imap_client.py
+ms_graph_mail_tester.py
+
+# Python 缓存文件
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+*.pyo
+
+# 临时文件
+temp_config.txt
+*.tmp
+*.temp
+
+# 日志文件
+*.log
+
+# IDE 文件
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 系统文件
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 环境变量文件
+.env
+.env.local
+
+# 测试文件
+test_*.py
+*_test.py
+
+# 文档临时文件
+*.md~
+
+# 依赖和构建
+node_modules/
+.vercel
+
+# 运行时文件
+*.pid
+*.seed
+*.pid.lock
+
+# 覆盖率报告
+coverage/
+*.lcov
+
+# 调试日志
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 可选的 npm 缓存目录
+.npm
+
+# 可选的 eslint 缓存
+.eslintcache
+
+# 备份文件
+*.bak
+*.backup
