@@ -1,8 +1,4 @@
-// 生成IMAP认证字符串的辅助函数
-const generateAuthString = (user, accessToken) => {
-    const authString = `user=${user}\x01auth=Bearer ${accessToken}\x01\x01`;
-    return Buffer.from(authString).toString('base64');
-}
+const { generateAuthString, get_access_token, graph_api } = require('./utils');
 
 module.exports = async (req, res) => {
 
@@ -24,88 +20,6 @@ module.exports = async (req, res) => {
     if (!refresh_token || !client_id || !email) {
         return res.status(400).json({ error: 'Missing required parameters: refresh_token, client_id, or email' });
     }
-
-    async function get_access_token() {
-        const response = await fetch('https://login.microsoftonline.com/consumers/oauth2/v2.0/token', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            body: new URLSearchParams({
-                'client_id': client_id,
-                'grant_type': 'refresh_token',
-                'refresh_token': refresh_token
-            }).toString()
-        });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`HTTP error! status: ${response.status}, response: ${errorText}`);
-        }
-
-        const responseText = await response.text();
-
-        try {
-            const data = JSON.parse(responseText);
-            return data.access_token;
-        } catch (parseError) {
-            throw new Error(`Failed to parse JSON: ${parseError.message}, response: ${responseText}`);
-        }
-    }
-
-    async function graph_api(refresh_token, client_id) {
-        try {
-            const response = await fetch('https://login.microsoftonline.com/consumers/oauth2/v2.0/token', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                body: new URLSearchParams({
-                    'client_id': client_id,
-                    'grant_type': 'refresh_token',
-                    'refresh_token': refresh_token,
-                    'scope': 'https://graph.microsoft.com/.default'
-                }).toString()
-            });
-
-            if (!response.ok) {
-                console.log(`Graph API token request failed: ${response.status}`);
-                return {
-                    access_token: null,
-                    status: false
-                }
-            }
-
-            const responseText = await response.text();
-            const data = JSON.parse(responseText);
-            console.log(`Graph API scope: ${data.scope}`);
-
-            // 检查是否有删除邮件所需的权限
-            const hasMailReadWrite = data.scope && data.scope.indexOf('https://graph.microsoft.com/Mail.ReadWrite') !== -1;
-
-            if (hasMailReadWrite) {
-                console.log('Graph API: 有Mail.ReadWrite权限，可以清空垃圾箱');
-                return {
-                    access_token: data.access_token,
-                    status: true
-                }
-            } else {
-                console.log('Graph API: 没有Mail.ReadWrite权限，无法清空垃圾箱，将使用IMAP模式');
-                return {
-                    access_token: data.access_token,
-                    status: false
-                }
-            }
-        } catch (error) {
-            console.log(`Graph API检测失败: ${error.message}，将使用IMAP模式`);
-            return {
-                access_token: null,
-                status: false
-            }
-        }
-    }
-
-
 
     try {
         console.log("判断是否支持Graph API");
@@ -226,7 +140,7 @@ async function processJunkIMAP(refresh_token, client_id, email, res) {
     const Imap = require('imap');
 
     try {
-        const access_token = await get_access_token_for_imap(refresh_token, client_id);
+        const access_token = await get_access_token(refresh_token, client_id);
         const authString = generateAuthString(email, access_token);
 
         const imap = new Imap({
@@ -416,34 +330,5 @@ async function processJunkIMAP(refresh_token, client_id, email, res) {
     } catch (error) {
         console.error('IMAP Error:', error);
         res.status(500).json({ error: 'IMAP Error', details: error.message });
-    }
-}
-
-// IMAP专用的token获取函数
-async function get_access_token_for_imap(refresh_token, client_id) {
-    const response = await fetch('https://login.microsoftonline.com/consumers/oauth2/v2.0/token', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
-        },
-        body: new URLSearchParams({
-            'client_id': client_id,
-            'grant_type': 'refresh_token',
-            'refresh_token': refresh_token
-        }).toString()
-    });
-
-    if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`HTTP error! status: ${response.status}, response: ${errorText}`);
-    }
-
-    const responseText = await response.text();
-
-    try {
-        const data = JSON.parse(responseText);
-        return data.access_token;
-    } catch (parseError) {
-        throw new Error(`Failed to parse JSON: ${parseError.message}, response: ${responseText}`);
     }
 }

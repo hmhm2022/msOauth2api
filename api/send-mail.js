@@ -1,3 +1,5 @@
+const { get_access_token } = require('./utils');
+
 module.exports = async (req, res) => {
 
     const { send_password } = req.method === 'GET' ? req.query : req.body;
@@ -76,31 +78,3 @@ module.exports = async (req, res) => {
         res.status(405).json({ error: 'Method not allowed' });
     }
 };
-
-async function get_access_token(refresh_token, client_id) {
-    const response = await fetch('https://login.microsoftonline.com/consumers/oauth2/v2.0/token', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
-        },
-        body: new URLSearchParams({
-            'client_id': client_id,
-            'grant_type': 'refresh_token',
-            'refresh_token': refresh_token
-        }).toString()
-    });
-
-    if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`HTTP error! status: ${response.status}, response: ${errorText}`);
-    }
-
-    const responseText = await response.text();
-
-    try {
-        const data = JSON.parse(responseText);
-        return data.access_token;
-    } catch (parseError) {
-        throw new Error(`Failed to parse JSON: ${parseError.message}, response: ${responseText}`);
-    }
-}

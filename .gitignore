@@ -67,3 +67,7 @@ yarn-error.log*
 # 备份文件
 *.bak
 *.backup
+
+# Cline 配置和记忆文件
+.clinerules
+.cunzhi-memory
