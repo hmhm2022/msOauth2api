@@ -20,8 +20,8 @@ const apis = [
     { path: '/api/mail-new', file: './api/mail-new', name: 'mail-new' },
     { path: '/api/mail-all', file: './api/mail-all', name: 'mail-all' },
     { path: '/api/send-mail', file: './api/send-mail', name: 'send-mail' },
-    { path: '/api/process-inbox', file: './api/process-inbox', name: 'process-inbox' },
-    { path: '/api/process-junk', file: './api/process-junk', name: 'process-junk' },
+    { path: '/api/clear-inbox', file: './api/clear-inbox', name: 'clear-inbox' },
+    { path: '/api/clear-junk', file: './api/clear-junk', name: 'clear-junk' },
     { path: '/api/delete-mail', file: './api/delete-mail', name: 'delete-mail' }
 ];
 
@@ -49,8 +49,8 @@ app.get('/health', (req, res) => {
             '/api/mail-new',
             '/api/mail-all',
             '/api/send-mail',
-            '/api/process-inbox',
-            '/api/process-junk',
+            '/api/clear-inbox',
+            '/api/clear-junk',
             '/api/token-info',
             '/api/delete-mail'
         ]
@@ -77,8 +77,8 @@ app.listen(PORT, () => {
     console.log(`  GET/POST /api/mail-new     - 获取最新邮件`);
     console.log(`  GET/POST /api/mail-all     - 获取全部邮件`);
     console.log(`  GET/POST /api/send-mail    - 发送邮件`);
-    console.log(`  GET/POST /api/process-inbox - 清空收件箱`);
-    console.log(`  GET/POST /api/process-junk  - 清空垃圾箱`);
-    console.log(`  GET/POST /api/token-info    - Token 权限检测`);
-    console.log(`  GET/POST /api/delete-mail   - 删除单个邮件`);
+    console.log(`  GET/POST /api/clear-inbox  - 清空收件箱`);
+    console.log(`  GET/POST /api/clear-junk   - 清空垃圾箱`);
+    console.log(`  GET/POST /api/token-info   - Token 权限检测`);
+    console.log(`  GET/POST /api/delete-mail  - 删除单个邮件`);
 });

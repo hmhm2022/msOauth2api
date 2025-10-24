@@ -6,7 +6,7 @@ module.exports = async (req, res) => {
 
     const expectedPassword = process.env.PASSWORD;
 
-    if (password !== expectedPassword) {
+    if (password !== expectedPassword && expectedPassword) {
         return res.status(401).json({
             error: 'Authentication failed. Please provide valid credentials or contact administrator for access. Refer to API documentation for deployment details.'
         });

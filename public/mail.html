@@ -144,9 +144,21 @@
             background: none;
             border: none;
             color: #555;
-            font-size: 0.9rem;
+            font-size: 1rem;
             cursor: pointer;
             padding: 0 5px;
+            line-height: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+            transition: transform 0.3s ease;
+            transform: rotate(0deg);
+        }
+
+        .toggle-btn.collapsed {
+            transform: rotate(-90deg);
         }
 
         .toggle-btn:hover {
@@ -231,6 +243,7 @@
         .mailbox-item {
             padding: 8px 12px;
             border: 1px solid #ddd;
+            border-left-width: 2px;
             margin-bottom: 6px;
             border-radius: 4px;
             background-color: white;
@@ -252,6 +265,61 @@
             border-color: #3498db;
         }
 
+        /* API 类型样式 - Graph API */
+        .mailbox-item.api-graph {
+            border-color: #0078d4;
+            border-left-color: #0078d4;
+        }
+
+        .mailbox-item.api-graph.selected {
+            background-color: #e3f2fd;
+            border-color: #0078d4;
+        }
+
+        .mailbox-item.api-graph:hover {
+            background-color: #f0f7ff;
+            border-color: #0078d4;
+        }
+
+        /* API 类型样式 - IMAP */
+        .mailbox-item.api-imap {
+            border-color: #ff8c00;
+            border-left-color: #ff8c00;
+        }
+
+        .mailbox-item.api-imap.selected {
+            background-color: #fff3e0;
+            border-color: #ff8c00;
+        }
+
+        .mailbox-item.api-imap:hover {
+            background-color: #fff8f0;
+            border-color: #ff8c00;
+        }
+
+        /* API 类型样式 - 检测中 */
+        .mailbox-item.api-detecting {
+            border-color: #95a5a6;
+            border-left-color: #95a5a6;
+            border-style: dashed;
+        }
+
+        .mailbox-item.api-detecting.selected {
+            background-color: #f5f5f5;
+            border-color: #95a5a6;
+        }
+
+        /* API 类型样式 - 未知 */
+        .mailbox-item.api-unknown {
+            border-color: #e0e0e0;
+            border-left-color: #e0e0e0;
+        }
+
+        .mailbox-item.api-unknown.selected {
+            background-color: #fafafa;
+            border-color: #e0e0e0;
+        }
+
         .mailbox-email {
             font-weight: bold;
             font-size: 0.9rem;
@@ -259,6 +327,32 @@
             overflow: hidden;
             text-overflow: ellipsis;
             flex: 1;
+        }
+
+        .api-type-icon {
+            position: absolute;
+            left: 4px;
+            top: 4px;
+            font-size: 8px;
+            width: 8px;
+            height: 8px;
+            line-height: 8px;
+            text-align: center;
+            z-index: 1;
+        }
+
+        /* 检测中图标旋转动画 */
+        @keyframes rotate {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .api-type-icon.detecting {
+            animation: rotate 2s linear infinite;
         }
 
         .delete-mailbox {
@@ -878,9 +972,9 @@
                     <div class="control-group" style="margin-bottom: 0;">
                         <button onclick="checkTokenInfo()">检测Token信息</button>
                         <button class="secondary" onclick="clearEmailDisplay()">清除显示</button>
+                        <button class="warning" onclick="deleteSelectedEmail()">删除选中邮件</button>
                         <button class="warning" onclick="clearInbox()">清空收件箱</button>
                         <button class="warning" onclick="clearJunk()">清空垃圾箱</button>
-                        <button class="warning" onclick="deleteSelectedEmail()">删除选中邮件</button>
                     </div>
                 </div>
             </div>
@@ -1146,6 +1240,17 @@
             // 初始化占位符
             updatePlaceholder();
 
+            // 先加载 API 密码和地址（必须在 loadMailboxesFromStorage 之前）
+            const savedApiPassword = localStorage.getItem('apiPassword');
+            if (savedApiPassword) {
+                document.getElementById('apiPassword').value = savedApiPassword;
+            }
+
+            const savedApiBaseUrl = localStorage.getItem('apiBaseUrl');
+            if (savedApiBaseUrl) {
+                document.getElementById('apiBaseUrl').value = savedApiBaseUrl;
+            }
+
             // 尝试从localStorage加载已保存的邮箱信息
             loadMailboxesFromStorage();
 
@@ -1158,17 +1263,6 @@
                 const currentEmailText = document.getElementById('currentEmailText');
                 currentEmailText.textContent = mailboxes[selectedMailboxIndex].email;
                 currentEmailDisplay.style.display = 'block';
-            }
-
-            // 尝试从localStorage加载已保存的API密码和地址
-            const savedApiPassword = localStorage.getItem('apiPassword');
-            if (savedApiPassword) {
-                document.getElementById('apiPassword').value = savedApiPassword;
-            }
-
-            const savedApiBaseUrl = localStorage.getItem('apiBaseUrl');
-            if (savedApiBaseUrl) {
-                document.getElementById('apiBaseUrl').value = savedApiBaseUrl;
             }
 
             // 尝试从localStorage加载设置区域的折叠状态
@@ -1258,13 +1352,13 @@
             if (content.classList.contains('collapsed')) {
                 // 展开
                 content.classList.remove('collapsed');
-                toggleBtn.textContent = '▼'; // 向下箭头
+                toggleBtn.classList.remove('collapsed');
                 statusText.textContent = '展开';
                 if (saveState) localStorage.setItem('importSectionCollapsed', 'false');
             } else {
                 // 折叠
                 content.classList.add('collapsed');
-                toggleBtn.textContent = '▶'; // 向右箭头
+                toggleBtn.classList.add('collapsed');
                 statusText.textContent = '收起';
                 if (saveState) localStorage.setItem('importSectionCollapsed', 'true');
             }
@@ -1278,10 +1372,30 @@
                     mailboxes = JSON.parse(savedMailboxes);
                     updateMailboxList();
                     setStatusMessage('已从本地存储加载邮箱信息', 'success');
+
+                    // 异步检测未知的 API 类型
+                    detectUnknownApiTypes();
                 } catch (error) {
                     console.error('加载邮箱信息失败:', error);
                     setStatusMessage('加载邮箱信息失败', 'error');
                 }
+            }
+        }
+
+        // 检测所有未知 API 类型的邮箱
+        async function detectUnknownApiTypes() {
+            const promises = [];
+            mailboxes.forEach((mailbox, index) => {
+                // 只检测未设置或未知的邮箱
+                if (!mailbox.apiType || mailbox.apiType === 'unknown') {
+                    promises.push(detectApiType(index));
+                }
+            });
+
+            if (promises.length > 0) {
+                console.log(`开始检测 ${promises.length} 个邮箱的 API 类型...`);
+                await Promise.all(promises);
+                console.log('API 类型检测完成');
             }
         }
 
@@ -1388,14 +1502,16 @@
                         email: parts[0],
                         password: parts[1],
                         client_id: parts[2],
-                        refresh_token: parts[3]
+                        refresh_token: parts[3],
+                        apiType: 'detecting'  // 初始化为检测中
                     });
                 } else if (isFormat2) {
                     newMailboxes.push({
                         email: parts[0],
                         password: parts[1],
                         client_id: parts[3],
-                        refresh_token: parts[2]
+                        refresh_token: parts[2],
+                        apiType: 'detecting'  // 初始化为检测中
                     });
                 }
             }
@@ -1425,6 +1541,98 @@
 
             // 清空输入框
             document.getElementById('mailboxInput').value = '';
+
+            // 异步检测新添加邮箱的 API 类型
+            console.log(`准备检测 ${newMailboxes.length} 个新邮箱的 API 类型`);
+            setTimeout(() => {
+                detectApiTypesForNewMailboxes(mailboxes.length - newMailboxes.length, newMailboxes.length);
+            }, 100);
+        }
+
+        // 异步检测邮箱的 API 类型
+        async function detectApiType(mailboxIndex) {
+            const mailbox = mailboxes[mailboxIndex];
+            if (!mailbox) {
+                console.warn(`邮箱索引 ${mailboxIndex} 不存在`);
+                return;
+            }
+
+            console.log(`[检测] 邮箱 ${mailbox.email} 当前状态: ${mailbox.apiType}`);
+
+            // 如果已经有明确的 API 类型（graph 或 imap），跳过检测
+            if (mailbox.apiType === 'graph' || mailbox.apiType === 'imap') {
+                console.log(`[跳过] 邮箱 ${mailbox.email} 已有 API 类型: ${mailbox.apiType}`);
+                return;
+            }
+
+            // 标记为检测中
+            mailbox.apiType = 'detecting';
+            console.log(`[开始] 检测邮箱 ${mailbox.email} 的 API 类型`);
+            updateMailboxList();
+            saveMailboxesToStorage();
+
+            try {
+                // 获取 API 基础地址
+                const apiBaseUrl = document.getElementById('apiBaseUrl').value.trim();
+                if (!apiBaseUrl) {
+                    console.warn('[错误] 未设置 API 地址，无法检测 API 类型');
+                    mailbox.apiType = 'unknown';
+                    updateMailboxList();
+                    saveMailboxesToStorage();
+                    return;
+                }
+
+                // 获取 API 密码
+                const apiPassword = document.getElementById('apiPassword').value.trim();
+
+                // 调用 token-info API
+                const url = `${apiBaseUrl}/token-info?refresh_token=${encodeURIComponent(mailbox.refresh_token)}&client_id=${encodeURIComponent(mailbox.client_id)}&email=${encodeURIComponent(mailbox.email)}&password=${encodeURIComponent(apiPassword)}`;
+
+                console.log(`[请求] 调用 token-info API: ${apiBaseUrl}/token-info`);
+
+                const response = await fetch(url);
+                console.log(`[响应] HTTP 状态: ${response.status}`);
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error(`[错误] HTTP error! status: ${response.status}, body: ${errorText}`);
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log(`[数据] token-info 返回:`, data);
+
+                if (data.success && data.tokenInfo) {
+                    // 根据 primaryMode 设置 API 类型
+                    mailbox.apiType = data.tokenInfo.primaryMode || 'unknown';
+                    console.log(`[成功] 邮箱 ${mailbox.email} 的 API 类型: ${mailbox.apiType}`);
+                } else {
+                    mailbox.apiType = 'unknown';
+                    console.warn(`[警告] 无法确定邮箱 ${mailbox.email} 的 API 类型，返回数据:`, data);
+                }
+            } catch (error) {
+                console.error(`[异常] 检测邮箱 ${mailbox.email} 的 API 类型失败:`, error);
+                mailbox.apiType = 'unknown';
+            }
+
+            // 更新显示和存储
+            console.log(`[完成] 邮箱 ${mailbox.email} 最终 API 类型: ${mailbox.apiType}`);
+            updateMailboxList();
+            saveMailboxesToStorage();
+        }
+
+        // 批量检测新添加邮箱的 API 类型
+        async function detectApiTypesForNewMailboxes(startIndex, count) {
+            console.log(`[批量检测] 开始检测 ${count} 个邮箱，起始索引: ${startIndex}`);
+            const promises = [];
+            for (let i = 0; i < count; i++) {
+                const index = startIndex + i;
+                console.log(`[批量检测] 添加检测任务: 索引 ${index}`);
+                promises.push(detectApiType(index));
+            }
+            console.log(`[批量检测] 等待 ${promises.length} 个检测任务完成...`);
+            await Promise.all(promises);
+            console.log(`[批量检测] 所有检测任务完成`);
         }
 
         // 更新邮箱列表显示
@@ -1448,7 +1656,18 @@
 
             mailboxes.forEach((mailbox, index) => {
                 const item = document.createElement('li');
-                item.className = 'mailbox-item' + (index === selectedMailboxIndex ? ' selected' : '');
+
+                // 根据 API 类型添加样式类
+                let apiTypeClass = 'api-unknown';
+                if (mailbox.apiType === 'graph') {
+                    apiTypeClass = 'api-graph';
+                } else if (mailbox.apiType === 'imap') {
+                    apiTypeClass = 'api-imap';
+                } else if (mailbox.apiType === 'detecting') {
+                    apiTypeClass = 'api-detecting';
+                }
+
+                item.className = 'mailbox-item ' + apiTypeClass + (index === selectedMailboxIndex ? ' selected' : '');
                 item.onclick = (e) => {
                     // 确保点击按钮时不选择邮箱
                     if (!e.target.classList.contains('delete-mailbox') &&
@@ -1456,6 +1675,21 @@
                         selectMailbox(index);
                     }
                 };
+
+                // 添加 API 类型图标（放在左上角）
+                const iconSpan = document.createElement('span');
+                iconSpan.className = 'api-type-icon';
+                if (mailbox.apiType === 'graph') {
+                    iconSpan.textContent = '⚡';
+                } else if (mailbox.apiType === 'imap') {
+                    iconSpan.textContent = '📮';
+                } else if (mailbox.apiType === 'detecting') {
+                    iconSpan.textContent = '⏳';
+                    iconSpan.classList.add('detecting');
+                } else {
+                    iconSpan.textContent = '❓';
+                }
+                item.appendChild(iconSpan);
 
                 const emailDiv = document.createElement('div');
                 emailDiv.className = 'mailbox-email';
@@ -1716,7 +1950,7 @@
                 }
 
                 // 使用GET请求
-                let apiUrl = `${apiBaseUrl}/process-inbox?refresh_token=${encodeURIComponent(mailbox.refresh_token)}&client_id=${encodeURIComponent(mailbox.client_id)}&email=${encodeURIComponent(mailbox.email)}`;
+                let apiUrl = `${apiBaseUrl}/clear-inbox?refresh_token=${encodeURIComponent(mailbox.refresh_token)}&client_id=${encodeURIComponent(mailbox.client_id)}&email=${encodeURIComponent(mailbox.email)}`;
 
                 // 如果有设置密码，添加到URL中
                 if (apiPassword) {
@@ -1776,7 +2010,7 @@
                 }
 
                 // 使用GET请求
-                let apiUrl = `${apiBaseUrl}/process-junk?refresh_token=${encodeURIComponent(mailbox.refresh_token)}&client_id=${encodeURIComponent(mailbox.client_id)}&email=${encodeURIComponent(mailbox.email)}`;
+                let apiUrl = `${apiBaseUrl}/clear-junk?refresh_token=${encodeURIComponent(mailbox.refresh_token)}&client_id=${encodeURIComponent(mailbox.client_id)}&email=${encodeURIComponent(mailbox.email)}`;
 
                 // 如果有设置密码，添加到URL中
                 if (apiPassword) {
@@ -2251,7 +2485,7 @@
 
                 // 如果有设置密码，添加到URL中
                 if (apiPassword) {
-                    apiUrl += `&send_password=${encodeURIComponent(apiPassword)}`;
+                    apiUrl += `&password=${encodeURIComponent(apiPassword)}`;
                 }
 
                 console.log('发送GET请求到:', apiUrl);
@@ -2377,7 +2611,7 @@
                 }
 
                 if (apiPassword) {
-                    formData.append('send_password', apiPassword);
+                    formData.append('password', apiPassword);
                 }
 
                 // 发送POST请求
@@ -2758,7 +2992,7 @@
                 }
 
                 // 使用GET请求
-                let apiUrl = `${apiBaseUrl}/process-inbox?refresh_token=${encodeURIComponent(mailbox.refresh_token)}&client_id=${encodeURIComponent(mailbox.client_id)}&email=${encodeURIComponent(mailbox.email)}`;
+                let apiUrl = `${apiBaseUrl}/clear-inbox?refresh_token=${encodeURIComponent(mailbox.refresh_token)}&client_id=${encodeURIComponent(mailbox.client_id)}&email=${encodeURIComponent(mailbox.email)}`;
 
                 // 如果有设置密码，添加到URL中
                 if (apiPassword) {
@@ -2819,7 +3053,7 @@
                 }
 
                 // 使用GET请求
-                let apiUrl = `${apiBaseUrl}/process-junk?refresh_token=${encodeURIComponent(mailbox.refresh_token)}&client_id=${encodeURIComponent(mailbox.client_id)}&email=${encodeURIComponent(mailbox.email)}`;
+                let apiUrl = `${apiBaseUrl}/clear-junk?refresh_token=${encodeURIComponent(mailbox.refresh_token)}&client_id=${encodeURIComponent(mailbox.client_id)}&email=${encodeURIComponent(mailbox.email)}`;
 
                 // 如果有设置密码，添加到URL中
                 if (apiPassword) {

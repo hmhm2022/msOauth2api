@@ -2,11 +2,11 @@ const { get_access_token } = require('./utils');
 
 module.exports = async (req, res) => {
 
-    const { send_password } = req.method === 'GET' ? req.query : req.body;
+    const { password } = req.method === 'GET' ? req.query : req.body;
 
-    const expectedPassword = process.env.SEND_PASSWORD;
+    const expectedPassword = process.env.PASSWORD;
 
-    if (send_password !== expectedPassword && expectedPassword) {
+    if (password !== expectedPassword && expectedPassword) {
         return res.status(401).json({
             error: 'Authentication failed. Please provide valid credentials or contact administrator for access. Refer to API documentation for deployment details.'
         });
