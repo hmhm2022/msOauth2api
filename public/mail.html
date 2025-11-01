@@ -2384,20 +2384,6 @@
             const listElement = document.getElementById('mailboxList');
             listElement.innerHTML = '';
 
-            if (mailboxes.length === 0) {
-                const emptyState = document.createElement('div');
-                emptyState.className = 'empty-state';
-                emptyState.style.position = 'absolute';
-                emptyState.style.top = '0';
-                emptyState.style.left = '0';
-                emptyState.style.right = '0';
-                emptyState.style.bottom = '0';
-                emptyState.innerHTML = '<p>没有邮箱，请导入或添加</p>';
-                listElement.appendChild(emptyState);
-                listElement.style.position = 'relative';
-                return;
-            }
-
             // 获取搜索关键词
             const searchKeyword = document.getElementById('mailboxSearchInput').value.toLowerCase();
 
@@ -2422,6 +2408,21 @@
                     groupedMailboxes[groupName] = [];
                 }
             });
+
+            // 如果没有邮箱也没有分组
+            if (mailboxes.length === 0 && mailboxGroups.length === 0) {
+                const emptyState = document.createElement('div');
+                emptyState.className = 'empty-state';
+                emptyState.style.position = 'absolute';
+                emptyState.style.top = '0';
+                emptyState.style.left = '0';
+                emptyState.style.right = '0';
+                emptyState.style.bottom = '0';
+                emptyState.innerHTML = '<p>没有邮箱，请导入或添加</p>';
+                listElement.appendChild(emptyState);
+                listElement.style.position = 'relative';
+                return;
+            }
 
             // 如果搜索后没有结果
             if (Object.keys(groupedMailboxes).length === 0) {
