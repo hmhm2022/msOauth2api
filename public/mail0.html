@@ -1,0 +1,4748 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Easy Outlook</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            background-color: #f5f5f5;
+        }
+
+        .app-container {
+            display: grid;
+            grid-template-columns: 350px 350px 1fr;
+            grid-template-rows: 60px 1fr;
+            height: 100vh;
+            width: 100%;
+            overflow: hidden;
+            border-collapse: collapse;
+        }
+
+        .header {
+            grid-column: 1 / 4;
+            background-color: #2c3e50;
+            color: white;
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #1a2530;
+            height: 60px;
+            box-sizing: border-box;
+        }
+
+        .current-email-display {
+            background-color: white;
+            color: #9b59b6;
+            padding: 5px 10px;
+            border: 2px solid #9b59b6;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            margin-left: 15px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 600px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        .current-email-display:hover {
+            background-color: #9b59b6;
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(155, 89, 182, 0.3);
+        }
+
+        .current-email-display:active {
+            transform: translateY(0);
+            box-shadow: 0 1px 2px rgba(155, 89, 182, 0.3);
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 500;
+        }
+
+        .sidebar, .email-sidebar {
+            grid-row: 2;
+            background-color: #f0f0f0;
+            border-right: 1px solid #ddd;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            height: calc(100vh - 60px); /* 减去头部高度 */
+        }
+
+        /* 统一所有区域的边框样式 */
+        .sidebar, .email-sidebar, .main-content {
+            border-top: none;
+        }
+
+        /* 导入邮箱区域样式 */
+        .sidebar > .sidebar-section:first-child {
+            overflow-y: visible;
+        }
+
+        .sidebar {
+            grid-column: 1;
+        }
+
+        .email-sidebar {
+            grid-column: 2;
+        }
+
+        .main-content {
+            grid-column: 3;
+            grid-row: 2;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            height: calc(100vh - 60px); /* 减去头部高度 */
+        }
+
+        /* 统一所有区域的内部分界线样式 */
+        .sidebar-section, .main-toolbar, .tabs, .email-sidebar .sidebar-section {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+            height: 42px; /* 固定高度确保一致性 */
+            box-sizing: border-box;
+            display: flex;
+            align-items: center;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 0;
+        }
+
+        /* 统一标题文本样式 */
+        .sidebar-section h2, .email-sidebar .sidebar-section h2 {
+            font-size: 0.95rem;
+            margin-bottom: 0;
+            margin-top: 0;
+            color: #333;
+            line-height: 1.2;
+        }
+
+        .toggle-btn {
+            background: none;
+            border: none;
+            color: #555;
+            font-size: 1rem;
+            cursor: pointer;
+            padding: 0 5px;
+            line-height: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+            transition: transform 0.3s ease;
+            transform: rotate(0deg);
+        }
+
+        .toggle-btn.collapsed {
+            transform: rotate(-90deg);
+        }
+
+        .toggle-btn:hover {
+            color: #3498db;
+            background: none;
+        }
+
+        .section-content {
+            overflow: hidden;
+            transition: all 0.3s ease;
+            max-height: 1000px; /* 足够大的高度来容纳内容 */
+            border-top: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 0;
+        }
+
+        .section-content.collapsed {
+            max-height: 0;
+            padding: 0;
+            margin: 0;
+            border: 0;
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .input-group {
+            margin-bottom: 12px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 3px;
+            font-size: 0.85rem;
+            color: #555;
+        }
+
+        button {
+            padding: 6px 10px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+
+        .small-btn {
+            padding: 3px 8px;
+            font-size: 0.75rem;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        button.secondary {
+            background-color: #95a5a6;
+        }
+
+        button.secondary:hover {
+            background-color: #7f8c8d;
+        }
+
+        button.warning {
+            background-color: #e74c3c;
+        }
+
+        button.warning:hover {
+            background-color: #c0392b;
+        }
+
+        .mailbox-list, .email-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            list-style-type: none;
+            max-height: calc(100vh - 102px); /* 减去头部高度和工具栏高度 */
+            margin: 0;
+            border-top: 1px solid #ddd;
+        }
+
+        .mailbox-item {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-left-width: 2px;
+            margin-bottom: 6px;
+            border-radius: 4px;
+            background-color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .mailbox-item:hover {
+            background-color: #f5f5f5;
+            border-color: #bbb;
+        }
+
+        .mailbox-item.selected {
+            background-color: #e1f0fa;
+            border-color: #3498db;
+        }
+
+        /* API 类型样式 - Graph API */
+        .mailbox-item.api-graph {
+            border-color: #0078d4;
+            border-left-color: #0078d4;
+        }
+
+        .mailbox-item.api-graph.selected {
+            background-color: #e3f2fd;
+            border-color: #0078d4;
+        }
+
+        .mailbox-item.api-graph:hover {
+            background-color: #f0f7ff;
+            border-color: #0078d4;
+        }
+
+        /* API 类型样式 - IMAP */
+        .mailbox-item.api-imap {
+            border-color: #ff8c00;
+            border-left-color: #ff8c00;
+        }
+
+        .mailbox-item.api-imap.selected {
+            background-color: #fff3e0;
+            border-color: #ff8c00;
+        }
+
+        .mailbox-item.api-imap:hover {
+            background-color: #fff8f0;
+            border-color: #ff8c00;
+        }
+
+        /* API 类型样式 - 检测中 */
+        .mailbox-item.api-detecting {
+            border-color: #95a5a6;
+            border-left-color: #95a5a6;
+            border-style: dashed;
+        }
+
+        .mailbox-item.api-detecting.selected {
+            background-color: #f5f5f5;
+            border-color: #95a5a6;
+        }
+
+        /* API 类型样式 - 未知 */
+        .mailbox-item.api-unknown {
+            border-color: #e0e0e0;
+            border-left-color: #e0e0e0;
+        }
+
+        .mailbox-item.api-unknown.selected {
+            background-color: #fafafa;
+            border-color: #e0e0e0;
+        }
+
+        .mailbox-email {
+            font-weight: bold;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex: 1;
+        }
+
+        .api-type-icon {
+            position: absolute;
+            left: 4px;
+            top: 4px;
+            font-size: 8px;
+            width: 8px;
+            height: 8px;
+            line-height: 8px;
+            text-align: center;
+            z-index: 1;
+        }
+
+        /* 检测中图标旋转动画 */
+        @keyframes rotate {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .api-type-icon.detecting {
+            animation: rotate 2s linear infinite;
+        }
+
+        .delete-mailbox {
+            margin-left: 10px;
+            background-color: transparent;
+            color: #999;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: normal;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: all 0.2s;
+        }
+
+        .delete-mailbox:hover {
+            background-color: #e74c3c;
+            color: white;
+            border-color: #c0392b;
+            opacity: 1;
+        }
+
+        .view-credentials-btn {
+            margin-left: 5px;
+            background-color: transparent;
+            color: #3498db;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: normal;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: all 0.2s;
+        }
+
+        .view-credentials-btn:hover {
+            background-color: #3498db;
+            color: white;
+            border-color: #2980b9;
+            opacity: 1;
+        }
+
+        .mailbox-buttons {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* 模态框样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            animation: slideIn 0.3s ease;
+            position: relative;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .modal-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #333;
+            margin: 0;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #999;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover {
+            background-color: #f5f5f5;
+            color: #333;
+        }
+
+        .credential-item {
+            margin-bottom: 15px;
+            padding: 12px;
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            border: 1px solid #e9ecef;
+        }
+
+        .credential-label {
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: #555;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .credential-value {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .credential-text {
+            flex: 1;
+            font-family: monospace;
+            font-size: 0.9rem;
+            color: #333;
+            background-color: white;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            word-break: break-all;
+            min-height: 20px;
+        }
+
+        .copy-btn {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 6px 12px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .copy-btn:hover {
+            background-color: #218838;
+        }
+
+        .copy-btn.copied {
+            background-color: #6c757d;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px) scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .main-toolbar {
+            background-color: #ecf0f1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .control-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+
+
+        select {
+            padding: 6px 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: white;
+            font-size: 0.9rem;
+        }
+
+        .email-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            height: calc(100vh - 120px); /* 减去头部和工具栏的高度 */
+        }
+
+        .email-header {
+            padding: 10px;
+            background-color: #f8f8f8;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .email-subject {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .email-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            color: #555;
+        }
+
+        .email-from { font-weight: bold; }
+
+        .email-viewer {
+            flex: 1;
+            overflow: auto;
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 170px); /* 减去头部、工具栏和标签页的高度 */
+            position: relative;
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .tabs {
+            display: flex;
+            background-color: #f8f8f8;
+            align-items: center;
+        }
+
+        .tab {
+            padding: 0 15px;
+            cursor: pointer;
+            border-right: 1px solid #ddd;
+            font-size: 0.9rem;
+            height: 100%;
+            display: flex;
+            align-items: center;
+        }
+
+        .tab.active {
+            background-color: white;
+            border-bottom: 2px solid #3498db;
+            height: calc(100% + 2px);
+            position: relative;
+            top: 1px;
+        }
+
+        .status-bar {
+            padding: 8px 15px;
+            font-size: 0.8rem;
+            border-top: 1px solid #ddd;
+            background-color: #f8f8f8;
+        }
+
+        .status-message {
+            color: #333;
+        }
+
+        .status-message.error {
+            color: #e74c3c;
+        }
+
+        .status-message.success {
+            color: #27ae60;
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            font-style: italic;
+            color: #666;
+            flex: 1;
+        }
+
+        .file-input {
+            opacity: 0;
+            position: absolute;
+            z-index: -1;
+        }
+
+        .file-input-label {
+            display: inline-block;
+            padding: 6px 10px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            margin-bottom: 0;
+        }
+
+        .file-input-label:hover {
+            background-color: #2980b9;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            margin-right: 10px;
+            display: inline-block;
+        }
+
+        textarea {
+            width: 100%;
+            height: 80px;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            resize: none;
+            font-family: inherit;
+            box-sizing: border-box;
+        }
+
+        .dropzone {
+            border: 2px dashed #ccc;
+            transition: all 0.3s ease;
+        }
+
+        .dropzone::placeholder {
+            font-size: 0.75rem; /* 比正常文本小两号 (0.85rem -> 0.75rem) */
+            line-height: 1.3;
+        }
+
+        .dropzone.dragover {
+            border-color: #3498db;
+            background-color: #f0f8ff;
+        }
+
+        .drag-hint, .api-hint {
+            font-size: 0.75rem;
+            color: #777;
+            margin-top: 3px;
+            text-align: center;
+            font-style: italic;
+        }
+
+        .api-hint {
+            text-align: left;
+            margin-top: 5px;
+        }
+
+        .api-hint a {
+            color: #3498db;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .api-hint a:hover {
+            text-decoration: underline;
+        }
+
+        .github-icon {
+            margin-right: 3px;
+            vertical-align: middle;
+            position: relative;
+            top: -1px;
+        }
+
+        .input-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .separator-input {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .separator-input label {
+            margin-bottom: 0;
+            font-size: 0.8rem;
+        }
+
+        .small-input {
+            width: 60px;
+            padding: 2px 5px;
+            font-size: 0.8rem;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            margin-bottom: 0;
+            box-sizing: border-box;
+        }
+
+        .empty-state {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            color: #7f8c8d;
+            padding: 20px;
+            min-height: 100px;
+            height: 100%;
+            width: 100%;
+        }
+
+        .empty-state p {
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .raw-data {
+            padding: 15px;
+            overflow: auto;
+            height: 100%;
+            font-family: monospace;
+            white-space: pre-wrap;
+            font-size: 0.9rem;
+            background-color: #f8f8f8;
+            flex: 1;
+        }
+
+        .email-item {
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            background-color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .email-item:hover {
+            background-color: #f5f5f5;
+            border-color: #bbb;
+        }
+
+        .email-item.selected {
+            background-color: #e1f0fa;
+            border-color: #3498db;
+        }
+
+        .email-item-subject {
+            font-weight: bold;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 5px;
+        }
+
+        .email-item-from {
+            font-size: 0.8rem;
+            color: #555;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .email-item-date {
+            font-size: 0.75rem;
+            color: #777;
+            margin-top: 5px;
+        }
+
+        /* 邮箱分组样式 */
+        .mailbox-group {
+            margin-bottom: 10px;
+        }
+
+        .group-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .group-header:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .group-header-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+        }
+
+        .group-toggle {
+            font-size: 0.8rem;
+            transition: transform 0.3s ease;
+            color: white;
+            width: 16px;
+            height: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .group-toggle.collapsed {
+            transform: rotate(-90deg);
+        }
+
+        .group-name {
+            font-weight: bold;
+            font-size: 0.9rem;
+            color: white;
+            flex: 1;
+        }
+
+        .group-count {
+            background-color: rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+
+        .group-actions {
+            display: flex;
+            gap: 5px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .group-header:hover .group-actions {
+            opacity: 1;
+        }
+
+        .group-action-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+        }
+
+        .group-action-btn:hover {
+            background: rgba(255, 255, 255, 0.4);
+            transform: scale(1.1);
+        }
+
+        .group-content {
+            overflow: hidden;
+            transition: all 0.3s ease;
+            max-height: 5000px;
+            padding-left: 10px;
+        }
+
+        .group-content.collapsed {
+            max-height: 0;
+            opacity: 0;
+        }
+
+        .group-content .mailbox-item {
+            margin-bottom: 6px;
+        }
+
+        /* 拖拽样式 */
+        .mailbox-item.dragging {
+            opacity: 0.5;
+            cursor: move;
+        }
+
+        .group-header.drag-over {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            transform: scale(1.02);
+        }
+
+        .mailbox-item.drag-over {
+            border-color: #3498db;
+            background-color: #e8f4f8;
+        }
+
+        /* 搜索框样式 */
+        .mailbox-search-container {
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .mailbox-search-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            outline: none;
+            transition: all 0.3s;
+            box-sizing: border-box;
+        }
+
+        .mailbox-search-input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .mailbox-search-input::placeholder {
+            color: #999;
+        }
+
+        /* 分组管理模态框 */
+        .group-modal {
+            display: none;
+            position: fixed;
+            z-index: 1001;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .group-modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .group-modal-content {
+            background-color: white;
+            border-radius: 12px;
+            padding: 25px;
+            width: 90%;
+            max-width: 450px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            animation: slideIn 0.3s ease;
+        }
+
+        .group-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .group-modal-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #333;
+            margin: 0;
+        }
+
+        .group-list {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+
+        .group-list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            background-color: #fafafa;
+            transition: all 0.2s;
+        }
+
+        .group-list-item:hover {
+            background-color: #f0f0f0;
+            border-color: #ccc;
+        }
+
+        .group-list-item-name {
+            font-weight: 500;
+            color: #333;
+        }
+
+        .group-list-item-count {
+            color: #666;
+            font-size: 0.85rem;
+            margin-left: 10px;
+        }
+
+        .group-list-item-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .new-group-input {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .new-group-input input {
+            flex: 1;
+            padding: 10px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .new-group-input input:focus {
+            border-color: #667eea;
+        }
+
+        /* 无分组提示 */
+        .no-group-hint {
+            text-align: center;
+            color: #999;
+            font-size: 0.85rem;
+            padding: 20px;
+            font-style: italic;
+        }
+
+        /* 未分组邮箱列表 */
+        .ungrouped-mailboxes {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .ungrouped-mailbox-item {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            margin-bottom: 5px;
+            background-color: white;
+            border: 1px solid #e8e8e8;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .ungrouped-mailbox-item:hover {
+            background-color: #f5f5f5;
+            border-color: #ccc;
+        }
+
+        .ungrouped-mailbox-item input[type="checkbox"] {
+            margin-right: 10px;
+            cursor: pointer;
+            width: 16px;
+            height: 16px;
+        }
+
+        .ungrouped-mailbox-item label {
+            flex: 1;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .ungrouped-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-radius: 6px;
+            align-items: center;
+        }
+
+        .ungrouped-actions button {
+            padding: 6px 12px;
+            font-size: 0.85rem;
+        }
+
+        .ungrouped-actions select {
+            flex: 1;
+            padding: 6px 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .ungrouped-actions select:focus {
+            border-color: #667eea;
+        }
+
+        .expand-toggle {
+            cursor: pointer;
+            user-select: none;
+            margin-left: 8px;
+            color: #667eea;
+            font-size: 0.9rem;
+        }
+
+        .expand-toggle:hover {
+            color: #5568d3;
+        }
+
+        /* 分组徽章颜色 */
+        .group-header.color-1 { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .group-header.color-2 { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .group-header.color-3 { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+        .group-header.color-4 { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
+        .group-header.color-5 { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
+        .group-header.color-6 { background: linear-gradient(135deg, #30cfd0 0%, #330867 100%); }
+        .group-header.color-7 { background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); }
+        .group-header.color-8 { background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%); }
+
+        /* 删除分组对话框样式 */
+        .delete-group-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            animation: fadeIn 0.2s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .delete-group-dialog {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 480px;
+            width: 90%;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .delete-group-dialog h3 {
+            margin: 0 0 16px 0;
+            font-size: 20px;
+            color: #333;
+        }
+
+        .delete-group-dialog .mailbox-count {
+            margin: 0 0 20px 0;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .delete-group-dialog .mailbox-count strong {
+            color: #007bff;
+            font-size: 16px;
+        }
+
+        .delete-options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .delete-option {
+            display: flex;
+            align-items: flex-start;
+            padding: 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .delete-option:hover {
+            border-color: #007bff;
+            background: #f8f9fa;
+        }
+
+        .delete-option.danger:hover {
+            border-color: #dc3545;
+            background: #fff5f5;
+        }
+
+        .delete-option input[type="radio"] {
+            margin-top: 2px;
+            margin-right: 12px;
+            cursor: pointer;
+            width: 18px;
+            height: 18px;
+        }
+
+        .delete-option .option-content {
+            flex: 1;
+        }
+
+        .delete-option .option-title {
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .delete-option .option-desc {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .delete-option .option-desc.warning {
+            color: #dc3545;
+            font-weight: 500;
+        }
+
+        .dialog-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        .dialog-buttons button {
+            padding: 10px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .dialog-buttons .cancel-btn {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .dialog-buttons .cancel-btn:hover {
+            background: #e0e0e0;
+        }
+
+        .dialog-buttons .confirm-btn {
+            background: #007bff;
+            color: white;
+        }
+
+        .dialog-buttons .confirm-btn:hover {
+            background: #0056b3;
+        }
+
+        /* 添加邮箱分组选择对话框样式 */
+        .add-mailbox-group-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .add-mailbox-group-dialog {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 480px;
+            width: 90%;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            animation: slideUp 0.3s ease;
+        }
+
+        .add-mailbox-group-dialog h3 {
+            margin: 0 0 16px 0;
+            font-size: 20px;
+            color: #333;
+        }
+
+        .add-mailbox-group-dialog .group-select-wrapper {
+            margin-bottom: 24px;
+        }
+
+        .add-mailbox-group-dialog .group-select-wrapper label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #555;
+            font-weight: 500;
+        }
+
+        .add-mailbox-group-dialog .group-select-wrapper select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.2s ease;
+        }
+
+        .add-mailbox-group-dialog .group-select-wrapper select:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- 头部 -->
+        <header class="header">
+            <div style="display: flex; align-items: center;">
+                <h1>Easy Outlook----令牌快捷收发邮件</h1>
+                <div id="currentEmailDisplay" class="current-email-display" style="display: none;" onclick="copyCurrentEmail()" title="点击复制邮箱地址">当前邮箱: <span id="currentEmailText"></span></div>
+            </div>
+            <div id="statusMessage" class="status-message"></div>
+        </header>
+
+        <!-- 侧边栏 -->
+        <aside class="sidebar">
+            <!-- 设置区域 -->
+            <div class="sidebar-section" id="importSection">
+                <div class="section-header">
+                    <h2>设置</h2>
+                    <div style="display: flex; align-items: center;">
+                        <span id="sectionStatus" style="font-size: 0.8rem; margin-right: 5px; color: #666;">展开</span>
+                        <button id="toggleImportBtn" class="toggle-btn" onclick="toggleImportSection()">▼</button>
+                    </div>
+                </div>
+            </div>
+            <div id="importContent" class="section-content">
+                <div class="input-group">
+                    <div class="input-header">
+                        <label for="mailboxInput">手动输入邮箱配置</label>
+                        <div class="separator-input">
+                            <label for="separatorInput">分隔符:</label>
+                            <input type="text" id="separatorInput" value="----" class="small-input">
+                        </div>
+                    </div>
+                    <textarea id="mailboxInput" placeholder="支持两种格式:&#10;格式1: email----password----client_id----refresh_token&#10;格式2: email----password----refresh_token----client_id" class="dropzone"></textarea>
+                    <div class="drag-hint">支持拖曳文件上传</div>
+                </div>
+                <div class="control-group" style="margin-bottom: 15px;">
+                    <div class="file-input-wrapper">
+                        <input type="file" id="fileInput" class="file-input" accept=".txt">
+                        <label for="fileInput" class="file-input-label">选择文件</label>
+                    </div>
+                    <button onclick="parseMailboxInput()">添加邮箱</button>
+                </div>
+                <div class="input-group">
+                    <label for="apiBaseUrl">API地址（必填）</label>
+                    <input type="text" id="apiBaseUrl" placeholder="格式为https://xxxx/api" class="form-control">
+                    <div class="api-hint">说明：搭建API请参见 <a href="https://github.com/hmhm2022/msOauth2api" target="_blank"><svg class="github-icon" viewBox="0 0 16 16" width="14" height="14"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg> msOauth2api</a> </div>
+                </div>
+                <div class="input-group">
+                    <label for="apiPassword">API密码（可选）</label>
+                    <input type="password" id="apiPassword" placeholder="如果服务器要求密码验证，请输入" class="form-control">
+                </div>
+                <div class="control-group" style="margin-top: 15px;">
+                    <button onclick="saveApiSettings()" class="secondary">保存API设置</button>
+                </div>
+            </div>
+
+            <!-- 邮箱列表区域 -->
+            <div class="sidebar-section">
+                <div class="section-header">
+                    <h2>邮箱列表</h2>
+                    <div style="display: flex; gap: 5px;">
+                        <button onclick="openGroupManageModal()" class="small-btn" style="background-color: #667eea;">分组管理</button>
+                        <button onclick="clearMailboxes()" class="small-btn">清除所有邮箱</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 搜索框 -->
+            <div class="mailbox-search-container">
+                <input type="text" id="mailboxSearchInput" class="mailbox-search-input" placeholder="🔍 搜索邮箱地址..." oninput="filterMailboxes()">
+            </div>
+
+            <ul id="mailboxList" class="mailbox-list" style="position: relative; height: calc(100% - 84px);">
+                <!-- 邮箱列表项将通过JS动态添加 -->
+            </ul>
+        </aside>
+
+        <!-- 邮件列表区域 -->
+        <aside class="email-sidebar">
+            <div class="sidebar-section">
+                <div class="section-header">
+                    <h2>邮件列表</h2>
+                    <div class="control-group" style="margin-bottom: 0;">
+                        <select id="mailboxFolderList" onchange="loadEmailList(true)">
+                            <option value="INBOX" selected>收件箱</option>
+                            <option value="Junk">垃圾邮件</option>
+                        </select>
+                        <span id="emailCount" style="margin: 0 8px; color: #666; font-size: 0.9rem;">(0)</span>
+                        <button onclick="loadEmailList(true)" class="small-btn">刷新</button>
+                    </div>
+                </div>
+            </div>
+
+            <ul id="emailList" class="email-list" style="flex: 1; height: calc(100% - 42px); position: relative;">
+                <!-- 邮件列表项将通过JS动态添加 -->
+                <div class="empty-state" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0;">
+                    <p>选择一个邮箱查看邮件</p>
+                </div>
+            </ul>
+        </aside>
+
+        <!-- 主内容区域 -->
+        <main class="main-content">
+            <!-- 工具栏 -->
+            <div class="main-toolbar">
+                <div class="section-header">
+                    <div class="control-group" style="margin-bottom: 0;">
+                        <label for="responseType">格式:</label>
+                        <select id="responseType">
+                            <option value="json" selected>JSON</option>
+                            <option value="html">HTML</option>
+                        </select>
+                        <button onclick="fetchEmail()">获取最新邮件</button>
+                    </div>
+                    <div class="control-group" style="margin-bottom: 0;">
+                        <button onclick="checkTokenInfo()">检测Token信息</button>
+                        <button class="secondary" onclick="clearEmailDisplay()">清除显示</button>
+                        <button class="warning" onclick="deleteSelectedEmail()">删除选中邮件</button>
+                        <button class="warning" onclick="clearInbox()">清空收件箱</button>
+                        <button class="warning" onclick="clearJunk()">清空垃圾箱</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 标签页 -->
+            <div class="tabs">
+                <div class="tab active" onclick="switchTab('emailTab')">邮件内容</div>
+                <div class="tab" onclick="switchTab('rawTab')">JSON格式</div>
+                <div class="tab" onclick="switchTab('sendMailTab')">发送邮件</div>
+                <div class="tab" onclick="switchTab('tokenInfoTab')">Token信息</div>
+                <div class="tab" onclick="switchTab('mailManageTab')">邮件管理</div>
+            </div>
+
+            <!-- 邮件内容区域 -->
+            <div id="emailTab" class="email-container" style="display: block;">
+                <div id="emailHeader" class="email-header" style="display: none;">
+                    <div id="emailSubject" class="email-subject"></div>
+                    <div class="email-meta">
+                        <div id="emailFrom" class="email-from"></div>
+                        <div id="emailDate"></div>
+                    </div>
+                </div>
+
+                <div id="emailViewer" class="email-viewer">
+                    <div id="emptyState" class="empty-state" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0;">
+                        <p>选择一个邮箱并点击"获取邮件"来查看最新邮件</p>
+                    </div>
+                    <div id="loadingMessage" class="loading" style="display: none;">
+                        正在加载邮件内容...
+                    </div>
+                    <iframe id="emailFrame" style="display: none; flex: 1;"></iframe>
+                </div>
+            </div>
+
+            <!-- 原始数据区域 -->
+            <div id="rawTab" class="email-container" style="display: none;">
+                <pre id="rawData" class="raw-data"></pre>
+            </div>
+
+            <!-- 发送邮件区域 -->
+            <div id="sendMailTab" class="email-container" style="display: none;">
+                <div style="padding: 20px;">
+                    <h2 style="margin-bottom: 20px;">发送邮件</h2>
+                    <div class="input-group">
+                        <label for="mailRecipient">收件人邮箱</label>
+                        <input type="text" id="mailRecipient" placeholder="例如：nqaprav26185@outlook.com" class="form-control">
+                    </div>
+                    <div class="input-group">
+                        <label for="mailSubject">邮件主题</label>
+                        <input type="text" id="mailSubject" placeholder="请输入邮件主题" class="form-control">
+                    </div>
+                    <div class="input-group">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                            <label for="mailContent">邮件内容</label>
+                            <div>
+                                <label style="display: inline; margin-right: 10px;">
+                                    <input type="radio" name="contentType" value="text" checked onclick="setContentTemplate('text')"> 纯文本
+                                </label>
+                                <label style="display: inline;">
+                                    <input type="radio" name="contentType" value="html" onclick="setContentTemplate('html')"> HTML格式
+                                </label>
+                            </div>
+                        </div>
+                        <textarea id="mailContent" placeholder="请输入邮件内容" class="form-control" style="height: 150px;"></textarea>
+                    </div>
+                    <div class="control-group" style="margin-top: 20px;">
+                        <button onclick="sendMailGET()" class="secondary" style="margin-right: 10px;">GET方式发送</button>
+                        <button onclick="sendMailPOST()">标准POST方式发送</button>
+                    </div>
+                    <div id="sendMailResult" style="margin-top: 20px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; display: none;">
+                        <h3>发送结果</h3>
+                        <pre id="sendMailResultContent" style="white-space: pre-wrap; font-family: monospace;"></pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Token信息标签页 -->
+            <div id="tokenInfoTab" class="email-container" style="display: none;">
+                <div style="padding: 20px;">
+                    <h2 style="margin-bottom: 20px;">Token信息检测</h2>
+                    <div class="control-group" style="margin-bottom: 20px;">
+                        <button onclick="checkTokenInfo()">检测当前邮箱Token信息</button>
+                        <button onclick="clearTokenInfo()" class="secondary">清除显示</button>
+                    </div>
+
+                    <div id="tokenInfoResult" style="display: none;">
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 4px; margin-bottom: 20px;">
+                            <h3 style="margin-bottom: 15px; color: #333;">Token基本信息</h3>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                                <div>
+                                    <strong>邮箱地址:</strong> <span id="tokenEmail">-</span>
+                                </div>
+                                <div>
+                                    <strong>主要模式:</strong> <span id="tokenPrimaryMode">-</span>
+                                </div>
+                                <div>
+                                    <strong>支持的模式:</strong> <span id="tokenSupportedModes">-</span>
+                                </div>
+                                <div>
+                                    <strong>检测时间:</strong> <span id="tokenTimestamp">-</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="background: #e8f5e8; padding: 15px; border-radius: 4px; margin-bottom: 20px;">
+                            <h3 style="margin-bottom: 15px; color: #2d5a2d;">功能支持情况</h3>
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+                                <div><span id="featureReadEmails">❌</span> 读取邮件</div>
+                                <div><span id="featureDeleteEmails">❌</span> 删除邮件</div>
+                                <div><span id="featureSendEmails">❌</span> 发送邮件</div>
+                                <div><span id="featureClearInbox">❌</span> 清空收件箱</div>
+                                <div><span id="featureClearJunk">❌</span> 清空垃圾箱</div>
+                            </div>
+                        </div>
+
+                        <div style="background: #fff3cd; padding: 15px; border-radius: 4px; margin-bottom: 20px;">
+                            <h3 style="margin-bottom: 15px; color: #856404;">使用建议</h3>
+                            <ul id="tokenRecommendations" style="margin: 0; padding-left: 20px;">
+                                <!-- 建议将通过JS动态添加 -->
+                            </ul>
+                        </div>
+
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 4px;">
+                            <h3 style="margin-bottom: 15px; color: #333;">详细权限信息</h3>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                                <div>
+                                    <h4 style="color: #0066cc; margin-bottom: 10px;">Graph API权限</h4>
+                                    <div id="graphApiPermissions">
+                                        <div>支持状态: <span id="graphApiSupported">-</span></div>
+                                        <div>Mail.ReadWrite: <span id="graphMailReadWrite">-</span></div>
+                                        <div>Mail.Read: <span id="graphMailRead">-</span></div>
+                                        <div>User.Read: <span id="graphUserRead">-</span></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h4 style="color: #cc6600; margin-bottom: 10px;">IMAP权限</h4>
+                                    <div id="imapPermissions">
+                                        <div>支持状态: <span id="imapSupported">-</span></div>
+                                        <div>IMAP访问: <span id="imapAccess">-</span></div>
+                                        <div>POP访问: <span id="popAccess">-</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 邮件管理标签页 -->
+            <div id="mailManageTab" class="email-container" style="display: none;">
+                <div style="padding: 20px;">
+                    <h2 style="margin-bottom: 20px;">邮件管理功能</h2>
+
+                    <!-- 删除指定邮件区域 -->
+                    <div style="background: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 15px; margin-bottom: 20px;">
+                        <h3 style="margin-bottom: 15px; color: #e74c3c;">删除指定邮件</h3>
+                        <div class="input-group">
+                            <label for="deleteMailId">邮件ID (从邮件列表中获取)</label>
+                            <input type="text" id="deleteMailId" placeholder="输入要删除的邮件ID" class="form-control">
+                            <div style="font-size: 0.8rem; color: #666; margin-top: 5px;">
+                                提示: 可以从邮件列表中点击邮件查看其ID，或在JSON格式标签页中查看完整的邮件ID信息
+                            </div>
+                        </div>
+                        <div class="control-group" style="margin-top: 15px;">
+                            <button onclick="deleteMailById()" class="warning">删除邮件</button>
+                            <button onclick="fillSelectedEmailId()" class="secondary">使用选中邮件ID</button>
+                        </div>
+                        <div id="deleteMailResult" style="margin-top: 15px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; display: none;">
+                            <h4>删除结果</h4>
+                            <pre id="deleteMailResultContent" style="white-space: pre-wrap; font-family: monospace; margin: 0;"></pre>
+                        </div>
+                    </div>
+
+                    <!-- 批量操作区域 -->
+                    <div style="background: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 15px; margin-bottom: 20px;">
+                        <h3 style="margin-bottom: 15px; color: #f39c12;">批量操作</h3>
+                        <div class="control-group">
+                            <button onclick="clearInboxWithStats()" class="warning">清空收件箱 (显示详细统计)</button>
+                            <button onclick="clearJunkWithStats()" class="warning">清空垃圾箱 (显示详细统计)</button>
+                        </div>
+                        <div id="batchOperationResult" style="margin-top: 15px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; display: none;">
+                            <h4>操作结果</h4>
+                            <div id="batchOperationStats" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 10px;">
+                                <div><strong>使用模式:</strong> <span id="batchMode">-</span></div>
+                                <div><strong>总邮件数:</strong> <span id="batchTotal">-</span></div>
+                                <div><strong>成功删除:</strong> <span id="batchDeleted">-</span></div>
+                                <div><strong>删除失败:</strong> <span id="batchFailed">-</span></div>
+                            </div>
+                            <pre id="batchOperationDetails" style="white-space: pre-wrap; font-family: monospace; margin: 0; font-size: 0.9rem;"></pre>
+                        </div>
+                    </div>
+
+                    <!-- 邮件信息显示区域 -->
+                    <div style="background: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 15px;">
+                        <h3 style="margin-bottom: 15px; color: #3498db;">当前选中邮件信息</h3>
+                        <div id="selectedEmailInfo">
+                            <div style="color: #666; font-style: italic;">请从邮件列表中选择一封邮件</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 邮箱凭据查看模态框 -->
+    <div id="credentialsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">邮箱凭据信息</h3>
+                <button class="modal-close" onclick="closeCredentialsModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="credential-item">
+                    <label class="credential-label">邮箱地址</label>
+                    <div class="credential-value">
+                        <div id="modalEmail" class="credential-text"></div>
+                        <button class="copy-btn" onclick="copyToClipboard('modalEmail', this)">复制</button>
+                    </div>
+                </div>
+                <div class="credential-item">
+                    <label class="credential-label">邮箱密码</label>
+                    <div class="credential-value">
+                        <div id="modalPassword" class="credential-text"></div>
+                        <button class="copy-btn" onclick="copyToClipboard('modalPassword', this)">复制</button>
+                    </div>
+                </div>
+                <div class="credential-item">
+                    <label class="credential-label">Client ID</label>
+                    <div class="credential-value">
+                        <div id="modalClientId" class="credential-text"></div>
+                        <button class="copy-btn" onclick="copyToClipboard('modalClientId', this)">复制</button>
+                    </div>
+                </div>
+                <div class="credential-item">
+                    <label class="credential-label">Refresh Token</label>
+                    <div class="credential-value">
+                        <div id="modalRefreshToken" class="credential-text"></div>
+                        <button class="copy-btn" onclick="copyToClipboard('modalRefreshToken', this)">复制</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 分组管理模态框 -->
+    <div id="groupManageModal" class="group-modal">
+        <div class="group-modal-content">
+            <div class="group-modal-header">
+                <h3 class="group-modal-title">📁 分组管理</h3>
+                <button class="modal-close" onclick="closeGroupManageModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="group-list" id="groupListContainer">
+                    <!-- 分组列表将通过JS动态添加 -->
+                </div>
+                <div class="new-group-input">
+                    <input type="text" id="newGroupNameInput" placeholder="输入新分组名称..." maxlength="20">
+                    <button onclick="createNewGroup()">创建分组</button>
+                </div>
+                <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e0e0e0;">
+                    <button onclick="autoGroupByDomain()" class="secondary" style="width: 100%;">🔄 自动按域名分组</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 存储所有邮箱信息
+        let mailboxes = [];
+        let selectedMailboxIndex = -1;
+        let emailListData = [];
+        let selectedEmailIndex = -1;
+
+        // 分组相关变量
+        let mailboxGroups = []; // 存储所有分组信息 [{name: '分组名', color: 1, collapsed: false}]
+        let groupCollapsedStates = {}; // 存储分组折叠状态 {groupName: true/false}
+
+        // 初始化
+        window.onload = function() {
+            // 为文件输入添加事件监听器
+            document.getElementById('fileInput').addEventListener('change', handleFileInput);
+
+            // 设置拖曳上传功能
+            setupDragAndDrop();
+
+            // 设置分隔符输入框事件
+            document.getElementById('separatorInput').addEventListener('input', updatePlaceholder);
+
+            // 初始化占位符
+            updatePlaceholder();
+
+            // 先加载 API 密码和地址（必须在 loadMailboxesFromStorage 之前）
+            const savedApiPassword = localStorage.getItem('apiPassword');
+            if (savedApiPassword) {
+                document.getElementById('apiPassword').value = savedApiPassword;
+            }
+
+            const savedApiBaseUrl = localStorage.getItem('apiBaseUrl');
+            if (savedApiBaseUrl) {
+                document.getElementById('apiBaseUrl').value = savedApiBaseUrl;
+            }
+
+            // 尝试从localStorage加载已保存的邮箱信息
+            loadMailboxesFromStorage();
+
+            // 确保即使没有从localStorage加载邮箱，也会显示空状态
+            updateMailboxList();
+
+            // 初始化当前邮箱显示
+            if (selectedMailboxIndex !== -1 && mailboxes.length > 0) {
+                const currentEmailDisplay = document.getElementById('currentEmailDisplay');
+                const currentEmailText = document.getElementById('currentEmailText');
+                currentEmailText.textContent = mailboxes[selectedMailboxIndex].email;
+                currentEmailDisplay.style.display = 'block';
+            }
+
+            // 尝试从localStorage加载设置区域的折叠状态
+            const importSectionCollapsed = localStorage.getItem('importSectionCollapsed');
+            if (importSectionCollapsed === 'true') {
+                toggleImportSection(false);
+            } else {
+                // 确保状态文本正确显示
+                document.getElementById('sectionStatus').textContent = '展开';
+            }
+
+        };
+
+        // 设置拖曳上传功能
+        function setupDragAndDrop() {
+            const dropzone = document.getElementById('mailboxInput');
+
+            // 防止浏览器默认行为
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropzone.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            // 鼠标拖入效果
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropzone.addEventListener(eventName, highlight, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropzone.addEventListener(eventName, unhighlight, false);
+            });
+
+            function highlight() {
+                dropzone.classList.add('dragover');
+            }
+
+            function unhighlight() {
+                dropzone.classList.remove('dragover');
+            }
+
+            // 处理拖入的文件
+            dropzone.addEventListener('drop', handleDrop, false);
+
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+
+                if (files.length) {
+                    const file = files[0];
+                    if (file.type === 'text/plain' || file.name.endsWith('.txt')) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            dropzone.value = e.target.result;
+
+                            // 更新占位符文本以反映当前分隔符
+                            const separator = document.getElementById('separatorInput').value || '----';
+                            dropzone.placeholder = `支持两种格式:\n格式1: email${separator}password${separator}client_id${separator}refresh_token\n格式2: email${separator}password${separator}refresh_token${separator}client_id`;
+
+                            setStatusMessage('文件已加载，请点击"添加邮箱"进行解析', 'success');
+                        };
+                        reader.onerror = function() {
+                            setStatusMessage('文件读取失败', 'error');
+                        };
+                        reader.readAsText(file);
+                    } else {
+                        setStatusMessage('请上传TXT文件', 'error');
+                    }
+                }
+            }
+        }
+
+        // 更新文本区域的占位符，反映当前分隔符
+        function updatePlaceholder() {
+            const separator = document.getElementById('separatorInput').value || '----';
+            document.getElementById('mailboxInput').placeholder = `支持两种格式:\n格式1: email${separator}password${separator}client_id${separator}refresh_token\n格式2: email${separator}password${separator}refresh_token${separator}client_id`;
+        }
+
+        // 切换设置区域的折叠/展开状态
+        function toggleImportSection(saveState = true) {
+            const content = document.getElementById('importContent');
+            const toggleBtn = document.getElementById('toggleImportBtn');
+            const statusText = document.getElementById('sectionStatus');
+
+            if (content.classList.contains('collapsed')) {
+                // 展开
+                content.classList.remove('collapsed');
+                toggleBtn.classList.remove('collapsed');
+                statusText.textContent = '展开';
+                if (saveState) localStorage.setItem('importSectionCollapsed', 'false');
+            } else {
+                // 折叠
+                content.classList.add('collapsed');
+                toggleBtn.classList.add('collapsed');
+                statusText.textContent = '收起';
+                if (saveState) localStorage.setItem('importSectionCollapsed', 'true');
+            }
+        }
+
+        // 从localStorage加载邮箱信息
+        function loadMailboxesFromStorage() {
+            const savedMailboxes = localStorage.getItem('mailboxes');
+            if (savedMailboxes) {
+                try {
+                    mailboxes = JSON.parse(savedMailboxes);
+
+                    // 兼容旧数据：为没有group字段的邮箱添加默认分组
+                    mailboxes.forEach(mailbox => {
+                        if (!mailbox.group) {
+                            mailbox.group = getDefaultGroupForEmail(mailbox.email);
+                        }
+                    });
+
+                    updateMailboxList();
+                    setStatusMessage('已从本地存储加载邮箱信息', 'success');
+
+                    // 异步检测未知的 API 类型
+                    detectUnknownApiTypes();
+                } catch (error) {
+                    console.error('加载邮箱信息失败:', error);
+                    setStatusMessage('加载邮箱信息失败', 'error');
+                }
+            }
+        }
+
+        // 检测所有未知 API 类型的邮箱
+        async function detectUnknownApiTypes() {
+            const promises = [];
+            mailboxes.forEach((mailbox, index) => {
+                // 只检测未设置或未知的邮箱
+                if (!mailbox.apiType || mailbox.apiType === 'unknown') {
+                    promises.push(detectApiType(index));
+                }
+            });
+
+            if (promises.length > 0) {
+                console.log(`开始检测 ${promises.length} 个邮箱的 API 类型...`);
+                await Promise.all(promises);
+                console.log('API 类型检测完成');
+            }
+        }
+
+        // 保存邮箱信息到localStorage
+        function saveMailboxesToStorage() {
+            try {
+                localStorage.setItem('mailboxes', JSON.stringify(mailboxes));
+
+                // 保存API设置
+                const apiPassword = document.getElementById('apiPassword').value;
+                if (apiPassword) {
+                    localStorage.setItem('apiPassword', apiPassword);
+                }
+
+                // 始终保存API地址，即使是空也保存，这样用户可以清除它
+                const apiBaseUrl = document.getElementById('apiBaseUrl').value;
+                localStorage.setItem('apiBaseUrl', apiBaseUrl);
+            } catch (error) {
+                console.error('保存邮箱信息失败:', error);
+                setStatusMessage('保存邮箱信息失败', 'error');
+            }
+        }
+
+        // 处理文件输入
+        function handleFileInput(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('mailboxInput').value = e.target.result;
+
+                // 更新占位符文本以反映当前分隔符
+                const separator = document.getElementById('separatorInput').value || '----';
+                document.getElementById('mailboxInput').placeholder = `支持两种格式:\n格式1: email${separator}password${separator}client_id${separator}refresh_token\n格式2: email${separator}password${separator}refresh_token${separator}client_id`;
+
+                setStatusMessage('文件已加载，请点击"添加邮箱"进行解析', 'success');
+            };
+            reader.onerror = function() {
+                setStatusMessage('文件读取失败', 'error');
+            };
+            reader.readAsText(file);
+        }
+
+        // 解析邮箱输入
+        async function parseMailboxInput() {
+            const input = document.getElementById('mailboxInput').value.trim();
+            if (!input) {
+                setStatusMessage('请输入邮箱配置信息', 'error');
+                return;
+            }
+
+            // 弹窗选择分组
+            const targetGroup = await showAddMailboxGroupDialog();
+            if (targetGroup === null) {
+                // 用户取消了操作
+                return;
+            }
+
+            // 获取用户自定义的分隔符，如果为空则使用默认值
+            let separator = document.getElementById('separatorInput').value;
+            if (!separator) {
+                separator = '----';
+                document.getElementById('separatorInput').value = separator;
+            }
+
+            // 按行分割，每行一个邮箱
+            const lines = input.split('\n').filter(line => line.trim() !== '');
+            const newMailboxes = [];
+            let errorCount = 0;
+            let format1Count = 0; // 格式1计数：email----password----client_id----refresh_token
+            let format2Count = 0; // 格式2计数：email----password----refresh_token----client_id
+
+            for (const line of lines) {
+                const parts = line.trim().split(separator);
+                if (parts.length < 4) {
+                    errorCount++;
+                    continue;
+                }
+
+                // 检测格式类型
+                // 通过检查第3个和第4个字段的特征来判断格式
+                // client_id 通常包含字母和数字，且较长
+                // refresh_token 通常更长，包含特殊字符如 . - _ 等
+                const field3 = parts[2];
+                const field4 = parts[3];
+
+                let isFormat1 = false; // email----password----client_id----refresh_token
+                let isFormat2 = false; // email----password----refresh_token----client_id
+
+                // 判断逻辑：
+                // 1. 如果第3个字段看起来像client_id（较短，主要是字母数字），第4个字段像refresh_token（很长，包含特殊字符）
+                // 2. 如果第3个字段看起来像refresh_token（很长，包含特殊字符），第4个字段像client_id（较短）
+
+                if (field3.length < 100 && field4.length > 100 && field4.includes('.')) {
+                    // 格式1：email----password----client_id----refresh_token
+                    isFormat1 = true;
+                    format1Count++;
+                } else if (field3.length > 100 && field3.includes('.') && field4.length < 100) {
+                    // 格式2：email----password----refresh_token----client_id
+                    isFormat2 = true;
+                    format2Count++;
+                } else {
+                    // 无法确定格式，尝试默认格式1
+                    isFormat1 = true;
+                    format1Count++;
+                }
+
+                // 根据用户选择决定分组
+                let mailboxGroup;
+                if (targetGroup === 'auto') {
+                    // 自动分组
+                    mailboxGroup = getDefaultGroupForEmail(parts[0]);
+                } else if (targetGroup === 'ungrouped') {
+                    // 未分组
+                    mailboxGroup = '未分组';
+                } else {
+                    // 指定分组
+                    mailboxGroup = targetGroup;
+                }
+
+                if (isFormat1) {
+                    newMailboxes.push({
+                        email: parts[0],
+                        password: parts[1],
+                        client_id: parts[2],
+                        refresh_token: parts[3],
+                        apiType: 'detecting',  // 初始化为检测中
+                        group: mailboxGroup
+                    });
+                } else if (isFormat2) {
+                    newMailboxes.push({
+                        email: parts[0],
+                        password: parts[1],
+                        client_id: parts[3],
+                        refresh_token: parts[2],
+                        apiType: 'detecting',  // 初始化为检测中
+                        group: mailboxGroup
+                    });
+                }
+            }
+
+            if (newMailboxes.length === 0) {
+                setStatusMessage('未找到有效的邮箱配置', 'error');
+                return;
+            }
+
+            // 添加新的邮箱到列表
+            mailboxes = [...mailboxes, ...newMailboxes];
+            updateMailboxList();
+            saveMailboxesToStorage();
+
+            let message = `已添加 ${newMailboxes.length} 个邮箱`;
+            if (format1Count > 0 && format2Count > 0) {
+                message += ` (格式1: ${format1Count}个, 格式2: ${format2Count}个)`;
+            } else if (format1Count > 0) {
+                message += ` (格式1: email-password-client_id-refresh_token)`;
+            } else if (format2Count > 0) {
+                message += ` (格式2: email-password-refresh_token-client_id)`;
+            }
+            if (errorCount > 0) {
+                message += `，${errorCount} 个格式错误被忽略`;
+            }
+            setStatusMessage(message, 'success');
+
+            // 清空输入框
+            document.getElementById('mailboxInput').value = '';
+
+            // 异步检测新添加邮箱的 API 类型
+            console.log(`准备检测 ${newMailboxes.length} 个新邮箱的 API 类型`);
+            setTimeout(() => {
+                detectApiTypesForNewMailboxes(mailboxes.length - newMailboxes.length, newMailboxes.length);
+            }, 100);
+        }
+
+        // 异步检测邮箱的 API 类型
+        async function detectApiType(mailboxIndex) {
+            const mailbox = mailboxes[mailboxIndex];
+            if (!mailbox) {
+                console.warn(`邮箱索引 ${mailboxIndex} 不存在`);
+                return;
+            }
+
+            console.log(`[检测] 邮箱 ${mailbox.email} 当前状态: ${mailbox.apiType}`);
+
+            // 如果已经有明确的 API 类型（graph 或 imap），跳过检测
+            if (mailbox.apiType === 'graph' || mailbox.apiType === 'imap') {
+                console.log(`[跳过] 邮箱 ${mailbox.email} 已有 API 类型: ${mailbox.apiType}`);
+                return;
+            }
+
+            // 标记为检测中
+            mailbox.apiType = 'detecting';
+            console.log(`[开始] 检测邮箱 ${mailbox.email} 的 API 类型`);
+            updateMailboxList();
+            saveMailboxesToStorage();
+
+            try {
+                // 获取 API 基础地址
+                const apiBaseUrl = document.getElementById('apiBaseUrl').value.trim();
+                if (!apiBaseUrl) {
+                    console.warn('[错误] 未设置 API 地址，无法检测 API 类型');
+                    mailbox.apiType = 'unknown';
+                    updateMailboxList();
+                    saveMailboxesToStorage();
+                    return;
+                }
+
+                // 获取 API 密码
+                const apiPassword = document.getElementById('apiPassword').value.trim();
+
+                // 调用 token-info API
+                const url = `${apiBaseUrl}/token-info?refresh_token=${encodeURIComponent(mailbox.refresh_token)}&client_id=${encodeURIComponent(mailbox.client_id)}&email=${encodeURIComponent(mailbox.email)}&password=${encodeURIComponent(apiPassword)}`;
+
+                console.log(`[请求] 调用 token-info API: ${apiBaseUrl}/token-info`);
+
+                const response = await fetch(url);
+                console.log(`[响应] HTTP 状态: ${response.status}`);
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error(`[错误] HTTP error! status: ${response.status}, body: ${errorText}`);
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log(`[数据] token-info 返回:`, data);
+
+                if (data.success && data.tokenInfo) {
+                    // 根据 primaryMode 设置 API 类型
+                    mailbox.apiType = data.tokenInfo.primaryMode || 'unknown';
+                    console.log(`[成功] 邮箱 ${mailbox.email} 的 API 类型: ${mailbox.apiType}`);
+                } else {
+                    mailbox.apiType = 'unknown';
+                    console.warn(`[警告] 无法确定邮箱 ${mailbox.email} 的 API 类型，返回数据:`, data);
+                }
+            } catch (error) {
+                console.error(`[异常] 检测邮箱 ${mailbox.email} 的 API 类型失败:`, error);
+                mailbox.apiType = 'unknown';
+            }
+
+            // 更新显示和存储
+            console.log(`[完成] 邮箱 ${mailbox.email} 最终 API 类型: ${mailbox.apiType}`);
+            updateMailboxList();
+            saveMailboxesToStorage();
+        }
+
+        // 批量检测新添加邮箱的 API 类型
+        async function detectApiTypesForNewMailboxes(startIndex, count) {
+            console.log(`[批量检测] 开始检测 ${count} 个邮箱，起始索引: ${startIndex}`);
+            const promises = [];
+            for (let i = 0; i < count; i++) {
+                const index = startIndex + i;
+                console.log(`[批量检测] 添加检测任务: 索引 ${index}`);
+                promises.push(detectApiType(index));
+            }
+            console.log(`[批量检测] 等待 ${promises.length} 个检测任务完成...`);
+            await Promise.all(promises);
+            console.log(`[批量检测] 所有检测任务完成`);
+        }
+
+        // 显示添加邮箱分组选择对话框
+        function showAddMailboxGroupDialog() {
+            return new Promise((resolve) => {
+                // 创建模态框
+                const modal = document.createElement('div');
+                modal.className = 'add-mailbox-group-modal';
+
+                // 创建对话框内容
+                const dialog = document.createElement('div');
+                dialog.className = 'add-mailbox-group-dialog';
+
+                // 标题
+                const title = document.createElement('h3');
+                title.textContent = '选择邮箱分组';
+                dialog.appendChild(title);
+
+                // 分组选择区域
+                const selectWrapper = document.createElement('div');
+                selectWrapper.className = 'group-select-wrapper';
+
+                const label = document.createElement('label');
+                label.textContent = '请选择要添加到的分组:';
+                selectWrapper.appendChild(label);
+
+                const select = document.createElement('select');
+                select.id = 'tempGroupSelect';
+
+                // 添加默认选项
+                const autoOption = document.createElement('option');
+                autoOption.value = 'auto';
+                autoOption.textContent = '自动分组';
+                select.appendChild(autoOption);
+
+                const ungroupedOption = document.createElement('option');
+                ungroupedOption.value = 'ungrouped';
+                ungroupedOption.textContent = '未分组';
+                select.appendChild(ungroupedOption);
+
+                // 添加现有分组
+                const existingGroups = [...new Set([
+                    ...mailboxes.map(m => m.group || '未分组'),
+                    ...mailboxGroups
+                ])].filter(g => g !== '未分组').sort();
+
+                existingGroups.forEach(group => {
+                    const option = document.createElement('option');
+                    option.value = group;
+                    option.textContent = group;
+                    select.appendChild(option);
+                });
+
+                // 添加"新建分组"选项
+                const newOption = document.createElement('option');
+                newOption.value = 'new';
+                newOption.textContent = '+ 新建分组...';
+                select.appendChild(newOption);
+
+                selectWrapper.appendChild(select);
+                dialog.appendChild(selectWrapper);
+
+                // 按钮区域
+                const buttons = document.createElement('div');
+                buttons.className = 'dialog-buttons';
+
+                const cancelBtn = document.createElement('button');
+                cancelBtn.className = 'cancel-btn';
+                cancelBtn.textContent = '取消';
+                cancelBtn.onclick = () => {
+                    document.body.removeChild(modal);
+                    resolve(null);
+                };
+
+                const confirmBtn = document.createElement('button');
+                confirmBtn.className = 'confirm-btn';
+                confirmBtn.textContent = '确定';
+                confirmBtn.onclick = async () => {
+                    const selectedValue = select.value;
+
+                    if (selectedValue === 'new') {
+                        // 新建分组
+                        const newGroupName = prompt('请输入新分组名称:');
+                        if (!newGroupName || !newGroupName.trim()) {
+                            setStatusMessage('未输入分组名称', 'error');
+                            return;
+                        }
+                        const groupName = newGroupName.trim();
+
+                        // 将新分组添加到mailboxGroups数组
+                        if (!mailboxGroups.includes(groupName)) {
+                            mailboxGroups.push(groupName);
+                            saveMailboxesToStorage();
+                        }
+
+                        document.body.removeChild(modal);
+                        resolve(groupName);
+                    } else {
+                        document.body.removeChild(modal);
+                        resolve(selectedValue);
+                    }
+                };
+
+                buttons.appendChild(cancelBtn);
+                buttons.appendChild(confirmBtn);
+                dialog.appendChild(buttons);
+
+                modal.appendChild(dialog);
+                document.body.appendChild(modal);
+
+                // 点击背景关闭
+                modal.onclick = (e) => {
+                    if (e.target === modal) {
+                        document.body.removeChild(modal);
+                        resolve(null);
+                    }
+                };
+            });
+        }
+
+        // 更新邮箱列表显示（支持分组）
+        function updateMailboxList() {
+            const listElement = document.getElementById('mailboxList');
+            listElement.innerHTML = '';
+
+            // 获取搜索关键词
+            const searchKeyword = document.getElementById('mailboxSearchInput').value.toLowerCase();
+
+            // 按分组组织邮箱
+            const groupedMailboxes = {};
+            mailboxes.forEach((mailbox, index) => {
+                // 搜索过滤
+                if (searchKeyword && !mailbox.email.toLowerCase().includes(searchKeyword)) {
+                    return;
+                }
+
+                const groupName = mailbox.group || '未分组';
+                if (!groupedMailboxes[groupName]) {
+                    groupedMailboxes[groupName] = [];
+                }
+                groupedMailboxes[groupName].push({ mailbox, index });
+            });
+
+            // 添加空分组（来自mailboxGroups数组）
+            mailboxGroups.forEach(groupName => {
+                if (!groupedMailboxes[groupName]) {
+                    groupedMailboxes[groupName] = [];
+                }
+            });
+
+            // 如果没有邮箱也没有分组
+            if (mailboxes.length === 0 && mailboxGroups.length === 0) {
+                const emptyState = document.createElement('div');
+                emptyState.className = 'empty-state';
+                emptyState.style.position = 'absolute';
+                emptyState.style.top = '0';
+                emptyState.style.left = '0';
+                emptyState.style.right = '0';
+                emptyState.style.bottom = '0';
+                emptyState.innerHTML = '<p>没有邮箱，请导入或添加</p>';
+                listElement.appendChild(emptyState);
+                listElement.style.position = 'relative';
+                return;
+            }
+
+            // 如果搜索后没有结果
+            if (Object.keys(groupedMailboxes).length === 0) {
+                const emptyState = document.createElement('div');
+                emptyState.className = 'empty-state';
+                emptyState.style.position = 'absolute';
+                emptyState.style.top = '0';
+                emptyState.style.left = '0';
+                emptyState.style.right = '0';
+                emptyState.style.bottom = '0';
+                emptyState.innerHTML = '<p>没有找到匹配的邮箱</p>';
+                listElement.appendChild(emptyState);
+                return;
+            }
+
+            // 渲染每个分组
+            Object.keys(groupedMailboxes).sort().forEach((groupName, groupIndex) => {
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'mailbox-group';
+
+                // 获取分组颜色
+                const colorIndex = (groupIndex % 8) + 1;
+                const isCollapsed = groupCollapsedStates[groupName] || false;
+
+                // 创建分组头部
+                const groupHeader = document.createElement('div');
+                groupHeader.className = `group-header color-${colorIndex}`;
+                groupHeader.setAttribute('data-group', groupName);
+                groupHeader.onclick = (e) => {
+                    if (!e.target.classList.contains('group-action-btn')) {
+                        toggleGroupCollapse(groupName);
+                    }
+                };
+
+                // 设置拖拽目标
+                groupHeader.ondragover = (e) => {
+                    e.preventDefault();
+                    groupHeader.classList.add('drag-over');
+                };
+                groupHeader.ondragleave = () => {
+                    groupHeader.classList.remove('drag-over');
+                };
+                groupHeader.ondrop = (e) => {
+                    e.preventDefault();
+                    groupHeader.classList.remove('drag-over');
+                    const mailboxIndex = parseInt(e.dataTransfer.getData('mailboxIndex'));
+                    moveMailboxToGroup(mailboxIndex, groupName);
+                };
+
+                const headerLeft = document.createElement('div');
+                headerLeft.className = 'group-header-left';
+
+                const toggleIcon = document.createElement('span');
+                toggleIcon.className = 'group-toggle' + (isCollapsed ? ' collapsed' : '');
+                toggleIcon.textContent = '▼';
+
+                const groupNameSpan = document.createElement('span');
+                groupNameSpan.className = 'group-name';
+                groupNameSpan.textContent = groupName;
+
+                const groupCount = document.createElement('span');
+                groupCount.className = 'group-count';
+                groupCount.textContent = groupedMailboxes[groupName].length;
+
+                headerLeft.appendChild(toggleIcon);
+                headerLeft.appendChild(groupNameSpan);
+
+                // 分组操作按钮
+                const groupActions = document.createElement('div');
+                groupActions.className = 'group-actions';
+
+                // 重命名按钮
+                const renameBtn = document.createElement('button');
+                renameBtn.className = 'group-action-btn';
+                renameBtn.innerHTML = '✏️';
+                renameBtn.title = '重命名分组';
+                renameBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    renameGroup(groupName);
+                };
+
+                // 删除分组按钮（不删除邮箱，只是移到未分组）
+                const deleteGroupBtn = document.createElement('button');
+                deleteGroupBtn.className = 'group-action-btn';
+                deleteGroupBtn.innerHTML = '🗑️';
+                deleteGroupBtn.title = '删除分组';
+                deleteGroupBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    deleteGroup(groupName);
+                };
+
+                if (groupName !== '未分组') {
+                    groupActions.appendChild(renameBtn);
+                    groupActions.appendChild(deleteGroupBtn);
+                }
+
+                groupHeader.appendChild(headerLeft);
+                groupHeader.appendChild(groupCount);
+                groupHeader.appendChild(groupActions);
+
+                // 创建分组内容
+                const groupContent = document.createElement('div');
+                groupContent.className = 'group-content' + (isCollapsed ? ' collapsed' : '');
+
+                groupedMailboxes[groupName].forEach(({ mailbox, index }) => {
+                    const item = createMailboxItem(mailbox, index);
+                    groupContent.appendChild(item);
+                });
+
+                groupDiv.appendChild(groupHeader);
+                groupDiv.appendChild(groupContent);
+                listElement.appendChild(groupDiv);
+            });
+        }
+
+        // 创建邮箱项元素
+        function createMailboxItem(mailbox, index) {
+            const item = document.createElement('li');
+
+            // 根据 API 类型添加样式类
+            let apiTypeClass = 'api-unknown';
+            if (mailbox.apiType === 'graph') {
+                apiTypeClass = 'api-graph';
+            } else if (mailbox.apiType === 'imap') {
+                apiTypeClass = 'api-imap';
+            } else if (mailbox.apiType === 'detecting') {
+                apiTypeClass = 'api-detecting';
+            }
+
+            item.className = 'mailbox-item ' + apiTypeClass + (index === selectedMailboxIndex ? ' selected' : '');
+            item.setAttribute('draggable', 'true');
+            item.onclick = (e) => {
+                if (!e.target.classList.contains('delete-mailbox') &&
+                    !e.target.classList.contains('view-credentials-btn')) {
+                    selectMailbox(index);
+                }
+            };
+
+            // 拖拽事件
+            item.ondragstart = (e) => {
+                e.dataTransfer.setData('mailboxIndex', index);
+                item.classList.add('dragging');
+            };
+            item.ondragend = () => {
+                item.classList.remove('dragging');
+            };
+
+            // 添加 API 类型图标
+            const iconSpan = document.createElement('span');
+            iconSpan.className = 'api-type-icon';
+            if (mailbox.apiType === 'graph') {
+                iconSpan.textContent = '⚡';
+            } else if (mailbox.apiType === 'imap') {
+                iconSpan.textContent = '📮';
+            } else if (mailbox.apiType === 'detecting') {
+                iconSpan.textContent = '⏳';
+                iconSpan.classList.add('detecting');
+            } else {
+                iconSpan.textContent = '❓';
+            }
+            item.appendChild(iconSpan);
+
+            const emailDiv = document.createElement('div');
+            emailDiv.className = 'mailbox-email';
+            emailDiv.textContent = mailbox.email;
+
+            const buttonsDiv = document.createElement('div');
+            buttonsDiv.className = 'mailbox-buttons';
+
+            const viewButton = document.createElement('button');
+            viewButton.className = 'view-credentials-btn';
+            viewButton.innerHTML = '&#128065;';
+            viewButton.title = '查看邮箱凭据';
+            viewButton.onclick = (e) => {
+                e.stopPropagation();
+                showCredentialsModal(index);
+            };
+
+            const deleteButton = document.createElement('button');
+            deleteButton.className = 'delete-mailbox';
+            deleteButton.innerHTML = '&#10005;';
+            deleteButton.title = '删除此邮箱';
+            deleteButton.onclick = (e) => {
+                e.stopPropagation();
+                deleteMailbox(index);
+            };
+
+            buttonsDiv.appendChild(viewButton);
+            buttonsDiv.appendChild(deleteButton);
+
+            item.appendChild(emailDiv);
+            item.appendChild(buttonsDiv);
+
+            return item;
+        }
+
+        // 选择邮箱
+        function selectMailbox(index) {
+            selectedMailboxIndex = index;
+            updateMailboxList();
+
+            // 更新当前邮箱显示
+            const currentEmailDisplay = document.getElementById('currentEmailDisplay');
+            const currentEmailText = document.getElementById('currentEmailText');
+            currentEmailText.textContent = mailboxes[index].email;
+            currentEmailDisplay.style.display = 'block';
+
+            setStatusMessage(`已选择邮箱: ${mailboxes[index].email}`, 'success');
+
+            // 确保切换到收件箱视图
+            document.getElementById('mailboxFolderList').value = 'INBOX';
+
+            // 自动加载邮件列表并显示最新邮件
+            loadEmailList(true);
+        }
+
+        // 清除所有邮箱
+        function clearMailboxes() {
+            if (confirm('确定要清除所有邮箱信息吗？')) {
+                mailboxes = [];
+                selectedMailboxIndex = -1;
+                updateMailboxList();
+                saveMailboxesToStorage();
+
+                // 隐藏当前邮箱显示
+                document.getElementById('currentEmailDisplay').style.display = 'none';
+
+                setStatusMessage('已清除所有邮箱', 'success');
+            }
+        }
+
+        // 获取最新邮件（跨文件夹）
+        async function fetchEmail() {
+            if (selectedMailboxIndex === -1) {
+                setStatusMessage('请先选择一个邮箱', 'error');
+                return;
+            }
+
+            const mailbox = mailboxes[selectedMailboxIndex];
+
+            setStatusMessage('正在获取最新邮件（跨文件夹）...', 'loading');
+            document.getElementById('loadingMessage').style.display = 'block';
+            document.getElementById('emailFrame').style.display = 'none';
+            document.getElementById('emailHeader').style.display = 'none';
+            document.getElementById('emptyState').style.display = 'none';
+
+            const responseType = document.getElementById('responseType').value;
+            const apiPassword = document.getElementById('apiPassword').value;
+
+            try {
+                // 获取API基础地址
+                const apiBaseUrl = document.getElementById('apiBaseUrl').value.trim();
+
+                // 检查用户是否填写了API地址
+                if (!apiBaseUrl) {
+                    throw new Error('请先填写API地址后再尝试');
+                }
+
+                // 同时从收件箱和垃圾箱获取最新邮件
+                const folders = ['INBOX', 'Junk'];
+                const emailPromises = folders.map(async (folder) => {
+                    let apiUrl = `${apiBaseUrl}/mail-new?refresh_token=${encodeURIComponent(mailbox.refresh_token)}&client_id=${encodeURIComponent(mailbox.client_id)}&email=${encodeURIComponent(mailbox.email)}&mailbox=${folder}&response_type=${responseType}`;
+
+                    // 如果有设置密码，添加到URL中
+                    if (apiPassword) {
+                        apiUrl += `&password=${encodeURIComponent(apiPassword)}`;
+                    }
+
+                    console.log(`发送GET请求到 ${folder}:`, apiUrl);
+
+                    try {
+                        const response = await fetch(apiUrl);
+                        if (!response.ok) {
+                            console.warn(`${folder} API请求失败: ${response.status} ${response.statusText}`);
+                            return null;
+                        }
+                        const data = await response.json();
+                        console.log(`收到 ${folder} 数据:`, data);
+
+                        // 处理API返回的数据格式，可能是单个邮件或邮件数组
+                        let emailData = null;
+                        if (Array.isArray(data)) {
+                            emailData = data.length > 0 ? data[0] : null; // 取第一封邮件
+                        } else if (data && data.data && Array.isArray(data.data)) {
+                            emailData = data.data.length > 0 ? data.data[0] : null; // 取第一封邮件
+                        } else {
+                            emailData = data; // 单个邮件对象
+                        }
+
+                        // 标记邮件来源文件夹
+                        if (emailData) {
+                            emailData.sourceFolder = folder;
+                        }
+
+                        return emailData;
+                    } catch (error) {
+                        console.warn(`获取 ${folder} 邮件失败:`, error);
+                        return null;
+                    }
+                });
+
+                // 等待所有请求完成
+                const results = await Promise.all(emailPromises);
+                const validEmails = results.filter(email => email !== null);
+
+                console.log('所有文件夹的邮件:', validEmails);
+
+                if (validEmails.length === 0) {
+                    throw new Error('无法从任何文件夹获取邮件');
+                }
+
+                // 比较邮件时间，找出最新的邮件
+                let latestEmail = null;
+                let latestDate = null;
+
+                for (const email of validEmails) {
+                    console.log(`处理 ${email.sourceFolder} 文件夹的邮件:`, email);
+
+                    // 获取邮件的日期，尝试多种可能的字段
+                    let emailDate = null;
+                    let dateSource = '';
+
+                    if (email.date) {
+                        emailDate = new Date(email.date);
+                        dateSource = 'date';
+                    } else if (email.createdDateTime) {
+                        emailDate = new Date(email.createdDateTime);
+                        dateSource = 'createdDateTime';
+                    } else if (email.receivedDateTime) {
+                        emailDate = new Date(email.receivedDateTime);
+                        dateSource = 'receivedDateTime';
+                    } else if (email.timestamp) {
+                        emailDate = new Date(email.timestamp);
+                        dateSource = 'timestamp';
+                    }
+
+                    console.log(`邮件日期: ${emailDate} (来源: ${dateSource})`);
+
+                    // 如果没有找到有效日期，使用当前时间作为备选
+                    if (!emailDate || isNaN(emailDate.getTime())) {
+                        console.warn(`${email.sourceFolder} 邮件没有有效日期，使用当前时间`);
+                        emailDate = new Date();
+                    }
+
+                    if (!latestDate || emailDate > latestDate) {
+                        latestDate = emailDate;
+                        latestEmail = email;
+                        console.log(`更新最新邮件: ${email.sourceFolder}, 日期: ${emailDate}`);
+                    }
+                }
+
+                console.log('最终选择的邮件:', latestEmail);
+
+                if (latestEmail) {
+                    // 显示原始数据
+                    document.getElementById('rawData').textContent = JSON.stringify(latestEmail, null, 2);
+
+                    // 显示邮件头部信息
+                    document.getElementById('emailFrom').textContent = `发件人: ${latestEmail.from || latestEmail.send || 'Unknown'}`;
+                    document.getElementById('emailSubject').textContent = latestEmail.subject || '无主题';
+                    document.getElementById('emailDate').textContent = new Date(latestEmail.date || latestEmail.timestamp || 0).toLocaleString();
+                    document.getElementById('emailHeader').style.display = 'block';
+
+                    // 显示邮件内容
+                    if (latestEmail.html) {
+                        displayEmailContent(latestEmail.html);
+                    } else if (latestEmail.body) {
+                        displayEmailText(latestEmail.body);
+                    } else if (latestEmail.text) {
+                        displayEmailText(latestEmail.text);
+                    } else {
+                        setStatusMessage('邮件内容为空', 'error');
+                        document.getElementById('loadingMessage').style.display = 'none';
+                        document.getElementById('emptyState').style.display = 'block';
+                        return;
+                    }
+
+                    const folderName = latestEmail.sourceFolder === 'INBOX' ? '收件箱' : '垃圾箱';
+                    setStatusMessage(`已获取最新邮件（来自${folderName}）`, 'success');
+                } else {
+                    document.getElementById('loadingMessage').style.display = 'none';
+                    document.getElementById('emptyState').style.display = 'block';
+                    setStatusMessage('未找到有效的邮件', 'error');
+                }
+
+                // 注意：不在这里调用 loadEmailList()，避免覆盖跨文件夹获取的邮件显示
+            } catch (error) {
+                console.error('获取邮件失败:', error);
+                setStatusMessage('获取邮件失败: ' + error.message, 'error');
+                document.getElementById('loadingMessage').style.display = 'none';
+                document.getElementById('emptyState').style.display = 'block';
+            }
+        }
+
+
+
+        // 清空收件箱
+        async function clearInbox() {
+            if (selectedMailboxIndex === -1) {
+                setStatusMessage('请先选择一个邮箱', 'error');
+                return;
+            }
+
+            if (!confirm('确定要清空所选邮箱的收件箱吗？此操作不可恢复！')) {
+                return;
+            }
+
+            const mailbox = mailboxes[selectedMailboxIndex];
+            setStatusMessage('正在清空收件箱...', 'loading');
+
+            const apiPassword = document.getElementById('apiPassword').value;
+
+            try {
+                // 获取API基础地址
+                const apiBaseUrl = document.getElementById('apiBaseUrl').value.trim();
+
+                // 检查用户是否填写了API地址
+                if (!apiBaseUrl) {
+                    throw new Error('请先填写API地址后再尝试');
+                }
+
+                // 使用GET请求
+                let apiUrl = `${apiBaseUrl}/clear-inbox?refresh_token=${encodeURIComponent(mailbox.refresh_token)}&client_id=${encodeURIComponent(mailbox.client_id)}&email=${encodeURIComponent(mailbox.email)}`;
+
+                // 如果有设置密码，添加到URL中
+                if (apiPassword) {
+                    apiUrl += `&password=${encodeURIComponent(apiPassword)}`;
+                }
+
+                console.log('发送GET请求到:', apiUrl);
+                const response = await fetch(apiUrl);
+
+                if (!response.ok) {
+                    throw new Error(`API请求失败: ${response.status} ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                console.log('收到的数据:', data);
+
+                // 显示原始数据
+                document.getElementById('rawData').textContent = JSON.stringify(data, null, 2);
+
+                // 清除邮件显示
+                clearEmailDisplay();
+
+                // 清空邮件列表
+                emailListData = [];
+                updateEmailList();
+
+                setStatusMessage('收件箱清空成功', 'success');
+            } catch (error) {
+                console.error('清空收件箱失败:', error);
+                setStatusMessage('清空收件箱失败: ' + error.message, 'error');
+            }
+        }
+
+        // 清空垃圾箱
+        async function clearJunk() {
+            if (selectedMailboxIndex === -1) {
+                setStatusMessage('请先选择一个邮箱', 'error');
+                return;
+            }
+
+            if (!confirm('确定要清空所选邮箱的垃圾箱吗？此操作不可恢复！')) {
+                return;
+            }
+
+            const mailbox = mailboxes[selectedMailboxIndex];
+            setStatusMessage('正在清空垃圾箱...', 'loading');
+
+            const apiPassword = document.getElementById('apiPassword').value;
+
+            try {
+                // 获取API基础地址
+                const apiBaseUrl = document.getElementById('apiBaseUrl').value.trim();
+
+                // 检查用户是否填写了API地址
+                if (!apiBaseUrl) {
+                    throw new Error('请先填写API地址后再尝试');
+                }
+
+                // 使用GET请求
+                let apiUrl = `${apiBaseUrl}/clear-junk?refresh_token=${encodeURIComponent(mailbox.refresh_token)}&client_id=${encodeURIComponent(mailbox.client_id)}&email=${encodeURIComponent(mailbox.email)}`;
+
+                // 如果有设置密码，添加到URL中
+                if (apiPassword) {
+                    apiUrl += `&password=${encodeURIComponent(apiPassword)}`;
+                }
+
+                console.log('发送GET请求到:', apiUrl);
+                const response = await fetch(apiUrl);
+
+                if (!response.ok) {
+                    throw new Error(`API请求失败: ${response.status} ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                console.log('收到的数据:', data);
+
+                // 显示原始数据
+                document.getElementById('rawData').textContent = JSON.stringify(data, null, 2);
+
+                // 清除邮件显示
+                clearEmailDisplay();
+
+                // 清空邮件列表
+                emailListData = [];
+                updateEmailList();
+
+                setStatusMessage('垃圾箱清空成功', 'success');
+            } catch (error) {
+                console.error('清空垃圾箱失败:', error);
+                setStatusMessage('清空垃圾箱失败: ' + error.message, 'error');
+            }
+        }
+
+        // 加载邮件列表
+        async function loadEmailList(autoDisplayLatest = false) {
+            if (selectedMailboxIndex === -1) {
+                setStatusMessage('请先选择一个邮箱', 'error');
+                return;
+            }
+
+            const mailbox = mailboxes[selectedMailboxIndex];
+            const mailboxFolder = document.getElementById('mailboxFolderList').value;
+            const apiPassword = document.getElementById('apiPassword').value;
+
+            setStatusMessage(`正在加载${mailboxFolder === 'INBOX' ? '收件箱' : '垃圾箱'}邮件...`, 'loading');
+
+            try {
+                // 获取API基础地址
+                const apiBaseUrl = document.getElementById('apiBaseUrl').value.trim();
+
+                // 检查用户是否填写了API地址
+                if (!apiBaseUrl) {
+                    throw new Error('请先填写API地址后再尝试');
+                }
+
+                // 使用GET请求
+                let apiUrl = `${apiBaseUrl}/mail-all?refresh_token=${encodeURIComponent(mailbox.refresh_token)}&client_id=${encodeURIComponent(mailbox.client_id)}&email=${encodeURIComponent(mailbox.email)}&mailbox=${mailboxFolder}`;
+
+                // 如果有设置密码，添加到URL中
+                if (apiPassword) {
+                    apiUrl += `&password=${encodeURIComponent(apiPassword)}`;
+                }
+
+                console.log('发送GET请求到:', apiUrl);
+                const response = await fetch(apiUrl);
+
+                if (!response.ok) {
+                    throw new Error(`API请求失败: ${response.status} ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                console.log('收到的数据:', data);
+
+                // 存储邮件列表数据
+                if (Array.isArray(data)) {
+                    emailListData = data;
+                } else if (data && data.data && Array.isArray(data.data)) {
+                    emailListData = data.data;
+                } else {
+                    emailListData = [data];
+                }
+
+                // 更新邮件列表显示
+                updateEmailList();
+
+                setStatusMessage(`已加载 ${emailListData.length} 封邮件`, 'success');
+
+                // 如果需要自动显示最新邮件且有邮件数据
+                if (autoDisplayLatest && emailListData.length > 0) {
+                    // 显示当前文件夹的最新邮件
+                    displayLatestEmailFromCurrentFolder();
+                }
+            } catch (error) {
+                console.error('加载邮件列表失败:', error);
+                setStatusMessage('加载邮件列表失败: ' + error.message, 'error');
+
+                // 清空邮件列表
+                emailListData = [];
+                updateEmailList();
+            }
+        }
+
+        // 显示当前文件夹的最新邮件
+        function displayLatestEmailFromCurrentFolder() {
+            if (emailListData.length === 0) {
+                return;
+            }
+
+            // 获取最新的邮件（第一个）
+            const latestEmail = emailListData[0];
+
+            // 显示原始数据
+            document.getElementById('rawData').textContent = JSON.stringify(latestEmail, null, 2);
+
+            // 显示邮件头部信息
+            document.getElementById('emailFrom').textContent = `发件人: ${latestEmail.from || latestEmail.send || 'Unknown'}`;
+            document.getElementById('emailSubject').textContent = latestEmail.subject || '无主题';
+            document.getElementById('emailDate').textContent = new Date(latestEmail.date || latestEmail.timestamp || 0).toLocaleString();
+            document.getElementById('emailHeader').style.display = 'block';
+
+            // 隐藏加载状态
+            document.getElementById('loadingMessage').style.display = 'none';
+            document.getElementById('emptyState').style.display = 'none';
+
+            // 显示邮件内容
+            if (latestEmail.html) {
+                displayEmailContent(latestEmail.html);
+            } else if (latestEmail.body) {
+                displayEmailText(latestEmail.body);
+            } else if (latestEmail.text) {
+                displayEmailText(latestEmail.text);
+            } else {
+                setStatusMessage('邮件内容为空', 'error');
+                document.getElementById('loadingMessage').style.display = 'none';
+                document.getElementById('emptyState').style.display = 'block';
+            }
+
+            const folderName = document.getElementById('mailboxFolderList').value === 'INBOX' ? '收件箱' : '垃圾箱';
+            setStatusMessage(`已显示${folderName}最新邮件`, 'success');
+        }
+
+        // 更新邮件列表显示
+        function updateEmailList() {
+            const listElement = document.getElementById('emailList');
+            listElement.innerHTML = '';
+
+            // 更新邮件数量显示
+            const emailCountElement = document.getElementById('emailCount');
+            if (emailCountElement) {
+                emailCountElement.textContent = `(${emailListData.length})`;
+            }
+
+            if (emailListData.length === 0) {
+                const emptyState = document.createElement('div');
+                emptyState.className = 'empty-state';
+                emptyState.style.position = 'absolute';
+                emptyState.style.top = '0';
+                emptyState.style.left = '0';
+                emptyState.style.right = '0';
+                emptyState.style.bottom = '0';
+                emptyState.innerHTML = '<p>没有找到邮件</p>';
+                listElement.appendChild(emptyState);
+                return;
+            }
+
+            // 按日期排序，最新的在前面
+            emailListData.sort((a, b) => {
+                const dateA = new Date(a.date || a.timestamp || 0);
+                const dateB = new Date(b.date || b.timestamp || 0);
+                return dateB - dateA;
+            });
+
+            emailListData.forEach((email, index) => {
+                const item = document.createElement('li');
+                item.className = 'email-item' + (index === selectedEmailIndex ? ' selected' : '');
+                item.onclick = () => selectEmail(index);
+
+                const subject = document.createElement('div');
+                subject.className = 'email-item-subject';
+                subject.textContent = email.subject || '无主题';
+
+                const from = document.createElement('div');
+                from.className = 'email-item-from';
+                from.textContent = `发件人: ${email.from || email.send || 'Unknown'}`;
+
+                const date = document.createElement('div');
+                date.className = 'email-item-date';
+                date.textContent = new Date(email.date || email.timestamp || 0).toLocaleString();
+
+                // 添加邮件ID和模式信息显示
+                const emailInfo = document.createElement('div');
+                emailInfo.className = 'email-item-info';
+                emailInfo.style.fontSize = '0.7rem';
+                emailInfo.style.color = '#888';
+                emailInfo.style.marginTop = '3px';
+
+                const emailId = email.id || email.messageId || 'N/A';
+                const emailMode = email.mode || 'unknown';
+                const modeColor = emailMode === 'graph' ? '#0066cc' : emailMode === 'imap' ? '#cc6600' : '#666';
+
+                emailInfo.innerHTML = `ID: ${emailId.length > 30 ? emailId.substring(0, 30) + '...' : emailId} | <span style="color: ${modeColor}; font-weight: bold;">${emailMode.toUpperCase()}</span>`;
+
+                item.appendChild(subject);
+                item.appendChild(from);
+                item.appendChild(date);
+                item.appendChild(emailInfo);
+                listElement.appendChild(item);
+            });
+        }
+
+        // 选择邮件
+        function selectEmail(index) {
+            selectedEmailIndex = index;
+            updateEmailList();
+
+            // 显示选中的邮件
+            displaySelectedEmail();
+        }
+
+        // 显示选中的邮件
+        function displaySelectedEmail() {
+            if (selectedEmailIndex === -1 || emailListData.length === 0) {
+                return;
+            }
+
+            const email = emailListData[selectedEmailIndex];
+
+            // 显示邮件头部信息
+            document.getElementById('emailFrom').textContent = `发件人: ${email.from || email.send || 'Unknown'}`;
+            document.getElementById('emailSubject').textContent = email.subject || '无主题';
+            document.getElementById('emailDate').textContent = new Date(email.date || email.timestamp || 0).toLocaleString();
+            document.getElementById('emailHeader').style.display = 'block';
+
+            // 显示邮件内容
+            document.getElementById('loadingMessage').style.display = 'block';
+            document.getElementById('emailFrame').style.display = 'none';
+            document.getElementById('emptyState').style.display = 'none';
+
+            // 显示原始数据
+            document.getElementById('rawData').textContent = JSON.stringify(email, null, 2);
+
+            if (email.html) {
+                displayEmailContent(email.html);
+            } else if (email.body) {
+                displayEmailText(email.body);
+            } else if (email.text) {
+                displayEmailText(email.text);
+            } else {
+                setStatusMessage('邮件内容为空', 'error');
+                document.getElementById('loadingMessage').style.display = 'none';
+                document.getElementById('emptyState').style.display = 'block';
+            }
+
+            // 切换到邮件内容标签页
+            switchTab('emailTab');
+
+            // 更新邮件管理标签页中的选中邮件信息
+            updateSelectedEmailInfo(email);
+        }
+
+        // 显示HTML邮件内容
+        function displayEmailContent(html) {
+            const iframe = document.getElementById('emailFrame');
+            iframe.style.display = 'block';
+
+            iframe.contentWindow.document.open();
+            iframe.contentWindow.document.write(html);
+            iframe.contentWindow.document.close();
+
+            // 调整iframe高度以适应内容
+            setTimeout(() => {
+                try {
+                    // 确保iframe内容完全加载
+                    iframe.style.height = '100%';
+                } catch (e) {
+                    console.error('调整iframe高度失败:', e);
+                }
+            }, 100);
+
+            document.getElementById('loadingMessage').style.display = 'none';
+            setStatusMessage('邮件加载成功', 'success');
+        }
+
+        // 显示纯文本邮件内容
+        function displayEmailText(text) {
+            const iframe = document.getElementById('emailFrame');
+            iframe.style.display = 'block';
+
+            iframe.contentWindow.document.open();
+            iframe.contentWindow.document.write(`
+                <html>
+                <head>
+                    <style>
+                        body {
+                            font-family: Arial, sans-serif;
+                            line-height: 1.6;
+                            padding: 20px;
+                            margin: 0;
+                            height: 100%;
+                            overflow: auto;
+                        }
+                        html { height: 100%; }
+                        pre {
+                            white-space: pre-wrap;
+                            margin: 0;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <pre>${text}</pre>
+                </body>
+                </html>
+            `);
+            iframe.contentWindow.document.close();
+
+            // 调整iframe高度以适应内容
+            setTimeout(() => {
+                try {
+                    // 确保iframe内容完全加载
+                    iframe.style.height = '100%';
+                } catch (e) {
+                    console.error('调整iframe高度失败:', e);
+                }
+            }, 100);
+
+            document.getElementById('loadingMessage').style.display = 'none';
+            setStatusMessage('邮件加载成功', 'success');
+        }
+
+        // 切换标签页
+        function switchTab(tabId) {
+            const tabs = document.querySelectorAll('.tab');
+            const tabContents = document.querySelectorAll('.email-container');
+
+            // 取消所有标签高亮
+            tabs.forEach(tab => tab.classList.remove('active'));
+
+            // 隐藏所有标签内容
+            tabContents.forEach(content => content.style.display = 'none');
+
+            // 高亮选中的标签
+            document.querySelector(`.tab[onclick*="${tabId}"]`).classList.add('active');
+
+            // 显示选中的标签内容
+            document.getElementById(tabId).style.display = 'block';
+
+            // 如果切换到发送邮件标签页，默认填充收件人为测试邮箱
+            if (tabId === 'sendMailTab' && document.getElementById('mailRecipient').value === '') {
+                document.getElementById('mailRecipient').value = 'nqaprav26185@outlook.com';
+            }
+        }
+
+        // 清除邮件显示
+        function clearEmailDisplay() {
+            document.getElementById('emailHeader').style.display = 'none';
+            document.getElementById('loadingMessage').style.display = 'none';
+            document.getElementById('emailFrame').style.display = 'none';
+            document.getElementById('emptyState').style.display = 'block';
+            document.getElementById('rawData').textContent = '';
+            setStatusMessage('显示已清除', 'success');
+
+            // 重置选中的邮件
+            selectedEmailIndex = -1;
+            if (emailListData.length > 0) {
+                updateEmailList();
+            }
+        }
+
+        // 设置状态消息
+        function setStatusMessage(message, type = 'info') {
+            const statusElement = document.getElementById('statusMessage');
+            statusElement.textContent = message;
+            statusElement.className = 'status-message ' + type;
+
+            if (type === 'success' || type === 'error') {
+                setTimeout(() => {
+                    if (statusElement.textContent === message) {
+                        statusElement.textContent = '';
+                        statusElement.className = 'status-message';
+                    }
+                }, 5000);
+            }
+        }
+
+        // 保存API设置
+        function saveApiSettings() {
+            const apiBaseUrl = document.getElementById('apiBaseUrl').value.trim();
+            const apiPassword = document.getElementById('apiPassword').value;
+
+            // 保存API地址，即使是空也保存
+            localStorage.setItem('apiBaseUrl', apiBaseUrl);
+
+            // 保存API密码，如果有的话
+            if (apiPassword) {
+                localStorage.setItem('apiPassword', apiPassword);
+            }
+
+            setStatusMessage('API设置已保存', 'success');
+        }
+
+        // 删除单个邮箱
+        function deleteMailbox(index) {
+            if (confirm(`确定要删除邮箱 ${mailboxes[index].email} 吗？`)) {
+                mailboxes.splice(index, 1);
+
+                // 如果删除的是当前选中的邮箱，重置选择
+                if (index === selectedMailboxIndex) {
+                    selectedMailboxIndex = -1;
+                    // 清除邮件显示
+                    clearEmailDisplay();
+                    // 隐藏当前邮箱显示
+                    document.getElementById('currentEmailDisplay').style.display = 'none';
+                } else if (index < selectedMailboxIndex) {
+                    // 如果删除的邮箱在当前选中的邮箱之前，需要调整索引
+                    selectedMailboxIndex--;
+                }
+
+                updateMailboxList();
+                saveMailboxesToStorage();
+                setStatusMessage('邮箱已删除', 'success');
+            }
+        }
+
+        // GET方式发送邮件
+        async function sendMailGET() {
+            if (selectedMailboxIndex === -1) {
+                setStatusMessage('请先选择一个邮箱', 'error');
+                return;
+            }
+
+            const mailbox = mailboxes[selectedMailboxIndex];
+            const recipient = document.getElementById('mailRecipient').value.trim();
+            const subject = document.getElementById('mailSubject').value.trim();
+            const content = document.getElementById('mailContent').value.trim();
+            const apiPassword = document.getElementById('apiPassword').value;
+            const contentType = document.querySelector('input[name="contentType"]:checked').value;
+
+            // 验证输入
+            if (!recipient) {
+                setStatusMessage('请输入收件人邮箱', 'error');
+                return;
+            }
+            if (!subject) {
+                setStatusMessage('请输入邮件主题', 'error');
+                return;
+            }
+            if (!content) {
+                setStatusMessage('请输入邮件内容', 'error');
+                return;
+            }
+
+            setStatusMessage('正在发送邮件...', 'loading');
+
+            try {
+                // 获取API基础地址
+                const apiBaseUrl = document.getElementById('apiBaseUrl').value.trim();
+
+                // 检查用户是否填写了API地址
+                if (!apiBaseUrl) {
+                    throw new Error('请先填写API地址后再尝试');
+                }
+
+                // 构建发送邮件的URL（GET方式）
+                let apiUrl = `${apiBaseUrl}/send-mail?refresh_token=${encodeURIComponent(mailbox.refresh_token)}&client_id=${encodeURIComponent(mailbox.client_id)}&email=${encodeURIComponent(mailbox.email)}&to=${encodeURIComponent(recipient)}&subject=${encodeURIComponent(subject)}`;
+
+                // 根据内容类型添加相应的参数
+                if (contentType === 'html') {
+                    apiUrl += `&html=${encodeURIComponent(content)}`;
+                } else {
+                    apiUrl += `&text=${encodeURIComponent(content)}`;
+                }
+
+                // 如果有设置密码，添加到URL中
+                if (apiPassword) {
+                    apiUrl += `&password=${encodeURIComponent(apiPassword)}`;
+                }
+
+                console.log('发送GET请求到:', apiUrl);
+                const response = await fetch(apiUrl);
+                const data = await response.json();
+
+                // 显示发送结果
+                document.getElementById('sendMailResult').style.display = 'block';
+                document.getElementById('sendMailResultContent').textContent = JSON.stringify(data, null, 2);
+
+                if (response.ok) {
+                    setStatusMessage('邮件发送成功', 'success');
+                } else {
+                    setStatusMessage('邮件发送失败: ' + (data.error || data.message || '未知错误'), 'error');
+                }
+            } catch (error) {
+                console.error('发送邮件失败:', error);
+                setStatusMessage('发送邮件失败: ' + error.message, 'error');
+                document.getElementById('sendMailResult').style.display = 'block';
+                document.getElementById('sendMailResultContent').textContent = error.toString();
+            }
+        }
+
+        // 设置内容模板
+        function setContentTemplate(type) {
+            const contentArea = document.getElementById('mailContent');
+
+            if (type === 'html' && contentArea.value.trim() === '') {
+                // HTML模板
+                contentArea.value = `<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #f8f9fa; padding: 10px; text-align: center; }
+        .content { padding: 20px; }
+        .footer { background-color: #f8f9fa; padding: 10px; text-align: center; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>测试HTML邮件</h2>
+        </div>
+        <div class="content">
+            <p>您好！</p>
+            <p>这是一封<strong>HTML格式</strong>的测试邮件。</p>
+            <p>您可以在这里添加更多内容。</p>
+            <p>祝好！</p>
+        </div>
+        <div class="footer">
+            此邮件由Easy Outlook发送
+        </div>
+    </div>
+</body>
+</html>`;
+            } else if (type === 'text' && contentArea.value.trim() === '') {
+                // 纯文本模板
+                contentArea.value = `您好！
+
+这是一封纯文本格式的测试邮件。
+您可以在这里添加更多内容。
+
+祝好！
+
+此邮件由Easy Outlook发送`;
+            }
+        }
+
+        // POST方式发送邮件
+        async function sendMailPOST() {
+            if (selectedMailboxIndex === -1) {
+                setStatusMessage('请先选择一个邮箱', 'error');
+                return;
+            }
+
+            const mailbox = mailboxes[selectedMailboxIndex];
+            const recipient = document.getElementById('mailRecipient').value.trim();
+            const subject = document.getElementById('mailSubject').value.trim();
+            const content = document.getElementById('mailContent').value.trim();
+            const apiPassword = document.getElementById('apiPassword').value;
+            const contentType = document.querySelector('input[name="contentType"]:checked').value;
+
+            // 验证输入
+            if (!recipient) {
+                setStatusMessage('请输入收件人邮箱', 'error');
+                return;
+            }
+            if (!subject) {
+                setStatusMessage('请输入邮件主题', 'error');
+                return;
+            }
+            if (!content) {
+                setStatusMessage('请输入邮件内容', 'error');
+                return;
+            }
+
+            setStatusMessage('正在发送邮件...', 'loading');
+
+            try {
+                // 获取API基础地址
+                const apiBaseUrl = document.getElementById('apiBaseUrl').value.trim();
+
+                // 检查用户是否填写了API地址
+                if (!apiBaseUrl) {
+                    throw new Error('请先填写API地址后再尝试');
+                }
+
+                // 构建请求体
+                const formData = new URLSearchParams();
+                formData.append('refresh_token', mailbox.refresh_token);
+                formData.append('client_id', mailbox.client_id);
+                formData.append('email', mailbox.email);
+                formData.append('to', recipient);
+                formData.append('subject', subject);
+
+                // 根据内容类型添加相应的参数
+                if (contentType === 'html') {
+                    formData.append('html', content);
+                } else {
+                    formData.append('text', content);
+                }
+
+                if (apiPassword) {
+                    formData.append('password', apiPassword);
+                }
+
+                // 发送POST请求
+                console.log('发送POST请求到:', `${apiBaseUrl}/send-mail`);
+                const response = await fetch(`${apiBaseUrl}/send-mail`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                // 显示发送结果
+                document.getElementById('sendMailResult').style.display = 'block';
+                document.getElementById('sendMailResultContent').textContent = JSON.stringify(data, null, 2);
+
+                if (response.ok) {
+                    setStatusMessage('邮件发送成功', 'success');
+                } else {
+                    setStatusMessage('邮件发送失败: ' + (data.error || data.message || '未知错误'), 'error');
+                }
+            } catch (error) {
+                console.error('发送邮件失败:', error);
+                setStatusMessage('发送邮件失败: ' + error.message, 'error');
+                document.getElementById('sendMailResult').style.display = 'block';
+                document.getElementById('sendMailResultContent').textContent = error.toString();
+            }
+        }
+
+        // 更新选中邮件信息显示
+        function updateSelectedEmailInfo(email) {
+            const infoElement = document.getElementById('selectedEmailInfo');
+            if (!email) {
+                infoElement.innerHTML = '<div style="color: #666; font-style: italic;">请从邮件列表中选择一封邮件</div>';
+                return;
+            }
+
+            const emailId = email.id || email.messageId || 'N/A';
+            const emailMode = email.mode || 'unknown';
+            const modeColor = emailMode === 'graph' ? '#0066cc' : emailMode === 'imap' ? '#cc6600' : '#666';
+
+            infoElement.innerHTML = `
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                    <div><strong>邮件主题:</strong> ${email.subject || '无主题'}</div>
+                    <div><strong>发件人:</strong> ${email.from || email.send || 'Unknown'}</div>
+                    <div><strong>接收时间:</strong> ${new Date(email.date || email.timestamp || 0).toLocaleString()}</div>
+                    <div><strong>认证模式:</strong> <span style="color: ${modeColor}; font-weight: bold;">${emailMode.toUpperCase()}</span></div>
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <strong>邮件ID:</strong>
+                    <input type="text" value="${emailId}" readonly style="width: 100%; padding: 5px; border: 1px solid #ddd; border-radius: 3px; background: #f9f9f9; font-family: monospace; font-size: 0.9rem;">
+                </div>
+                ${email.messageId && email.messageId !== emailId ? `
+                <div style="margin-bottom: 10px;">
+                    <strong>Message-ID:</strong>
+                    <input type="text" value="${email.messageId}" readonly style="width: 100%; padding: 5px; border: 1px solid #ddd; border-radius: 3px; background: #f9f9f9; font-family: monospace; font-size: 0.9rem;">
+                </div>
+                ` : ''}
+                ${email._imapSeqno ? `
+                <div style="margin-bottom: 10px;">
+                    <strong>IMAP序列号:</strong> ${email._imapSeqno}
+                </div>
+                ` : ''}
+            `;
+        }
+
+        // 检测Token信息
+        async function checkTokenInfo() {
+            if (selectedMailboxIndex === -1) {
+                setStatusMessage('请先选择一个邮箱', 'error');
+                return;
+            }
+
+            const mailbox = mailboxes[selectedMailboxIndex];
+            setStatusMessage('正在检测Token信息...', 'loading');
+
+            const apiPassword = document.getElementById('apiPassword').value;
+
+            try {
+                // 获取API基础地址
+                const apiBaseUrl = document.getElementById('apiBaseUrl').value.trim();
+
+                // 检查用户是否填写了API地址
+                if (!apiBaseUrl) {
+                    throw new Error('请先填写API地址后再尝试');
+                }
+
+                // 使用GET请求
+                let apiUrl = `${apiBaseUrl}/token-info?refresh_token=${encodeURIComponent(mailbox.refresh_token)}&client_id=${encodeURIComponent(mailbox.client_id)}&email=${encodeURIComponent(mailbox.email)}`;
+
+                // 如果有设置密码，添加到URL中
+                if (apiPassword) {
+                    apiUrl += `&password=${encodeURIComponent(apiPassword)}`;
+                }
+
+                console.log('发送Token检测请求到:', apiUrl);
+                const response = await fetch(apiUrl);
+
+                if (!response.ok) {
+                    throw new Error(`API请求失败: ${response.status} ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                console.log('收到的Token信息:', data);
+
+                if (data.success && data.tokenInfo) {
+                    displayTokenInfo(data.tokenInfo);
+                    setStatusMessage('Token信息检测成功', 'success');
+                    switchTab('tokenInfoTab');
+                } else {
+                    throw new Error(data.error || 'Token信息检测失败');
+                }
+            } catch (error) {
+                console.error('Token信息检测失败:', error);
+                setStatusMessage('Token信息检测失败: ' + error.message, 'error');
+            }
+        }
+
+        // 显示Token信息
+        function displayTokenInfo(tokenInfo) {
+            // 基本信息
+            document.getElementById('tokenEmail').textContent = tokenInfo.email || 'N/A';
+            document.getElementById('tokenPrimaryMode').textContent = tokenInfo.primaryMode || 'unknown';
+            document.getElementById('tokenSupportedModes').textContent = tokenInfo.supportedModes.join(', ') || 'none';
+            document.getElementById('tokenTimestamp').textContent = new Date().toLocaleString();
+
+            // 功能支持情况
+            document.getElementById('featureReadEmails').textContent = tokenInfo.features.readEmails ? '✅' : '❌';
+            document.getElementById('featureDeleteEmails').textContent = tokenInfo.features.deleteEmails ? '✅' : '❌';
+            document.getElementById('featureSendEmails').textContent = tokenInfo.features.sendEmails ? '✅' : '❌';
+            document.getElementById('featureClearInbox').textContent = tokenInfo.features.clearInbox ? '✅' : '❌';
+            document.getElementById('featureClearJunk').textContent = tokenInfo.features.clearJunk ? '✅' : '❌';
+
+            // 使用建议
+            const recommendationsList = document.getElementById('tokenRecommendations');
+            recommendationsList.innerHTML = '';
+            if (tokenInfo.recommendations && tokenInfo.recommendations.length > 0) {
+                tokenInfo.recommendations.forEach(rec => {
+                    const li = document.createElement('li');
+                    li.textContent = rec;
+                    li.style.marginBottom = '5px';
+                    recommendationsList.appendChild(li);
+                });
+            } else {
+                const li = document.createElement('li');
+                li.textContent = '暂无特殊建议';
+                li.style.color = '#666';
+                recommendationsList.appendChild(li);
+            }
+
+            // Graph API权限
+            const graphCap = tokenInfo.capabilities.graphApi;
+            document.getElementById('graphApiSupported').textContent = graphCap.supported ? '✅ 支持' : '❌ 不支持';
+            document.getElementById('graphApiSupported').style.color = graphCap.supported ? '#27ae60' : '#e74c3c';
+
+            if (graphCap.permissions) {
+                document.getElementById('graphMailReadWrite').textContent = graphCap.permissions.mailReadWrite ? '✅' : '❌';
+                document.getElementById('graphMailRead').textContent = graphCap.permissions.mailRead ? '✅' : '❌';
+                document.getElementById('graphUserRead').textContent = graphCap.permissions.userRead ? '✅' : '❌';
+            }
+
+            // IMAP权限
+            const imapCap = tokenInfo.capabilities.imap;
+            document.getElementById('imapSupported').textContent = imapCap.supported ? '✅ 支持' : '❌ 不支持';
+            document.getElementById('imapSupported').style.color = imapCap.supported ? '#27ae60' : '#e74c3c';
+
+            if (imapCap.permissions) {
+                document.getElementById('imapAccess').textContent = imapCap.permissions.imapAccess ? '✅' : '❌';
+                document.getElementById('popAccess').textContent = imapCap.permissions.popAccess ? '✅' : '❌';
+            }
+
+            // 显示Token信息区域
+            document.getElementById('tokenInfoResult').style.display = 'block';
+        }
+
+        // 清除Token信息显示
+        function clearTokenInfo() {
+            document.getElementById('tokenInfoResult').style.display = 'none';
+            setStatusMessage('已清除Token信息显示', 'success');
+        }
+
+        // 根据邮件ID删除邮件
+        async function deleteMailById() {
+            if (selectedMailboxIndex === -1) {
+                setStatusMessage('请先选择一个邮箱', 'error');
+                return;
+            }
+
+            const mailId = document.getElementById('deleteMailId').value.trim();
+            if (!mailId) {
+                setStatusMessage('请输入要删除的邮件ID', 'error');
+                return;
+            }
+
+            if (!confirm(`确定要删除邮件ID为 "${mailId}" 的邮件吗？此操作不可恢复！`)) {
+                return;
+            }
+
+            const mailbox = mailboxes[selectedMailboxIndex];
+            setStatusMessage('正在删除邮件...', 'loading');
+
+            const apiPassword = document.getElementById('apiPassword').value;
+
+            try {
+                // 获取API基础地址
+                const apiBaseUrl = document.getElementById('apiBaseUrl').value.trim();
+
+                // 检查用户是否填写了API地址
+                if (!apiBaseUrl) {
+                    throw new Error('请先填写API地址后再尝试');
+                }
+
+                // 使用GET请求
+                let apiUrl = `${apiBaseUrl}/delete-mail?refresh_token=${encodeURIComponent(mailbox.refresh_token)}&client_id=${encodeURIComponent(mailbox.client_id)}&email=${encodeURIComponent(mailbox.email)}&message_id=${encodeURIComponent(mailId)}&confirm=YES`;
+
+                // 如果有设置密码，添加到URL中
+                if (apiPassword) {
+                    apiUrl += `&password=${encodeURIComponent(apiPassword)}`;
+                }
+
+                console.log('发送删除邮件请求到:', apiUrl);
+                const response = await fetch(apiUrl);
+
+                if (!response.ok) {
+                    throw new Error(`API请求失败: ${response.status} ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                console.log('收到的删除结果:', data);
+
+                // 显示删除结果
+                document.getElementById('deleteMailResult').style.display = 'block';
+                document.getElementById('deleteMailResultContent').textContent = JSON.stringify(data, null, 2);
+
+                if (data.success) {
+                    setStatusMessage('邮件删除成功', 'success');
+                    // 清空输入框
+                    document.getElementById('deleteMailId').value = '';
+                    // 刷新邮件列表
+                    loadEmailList();
+                } else {
+                    setStatusMessage('邮件删除失败: ' + (data.error || '未知错误'), 'error');
+                }
+            } catch (error) {
+                console.error('删除邮件失败:', error);
+                setStatusMessage('删除邮件失败: ' + error.message, 'error');
+                document.getElementById('deleteMailResult').style.display = 'block';
+                document.getElementById('deleteMailResultContent').textContent = error.toString();
+            }
+        }
+
+        // 使用选中邮件的ID填充删除输入框
+        function fillSelectedEmailId() {
+            if (selectedEmailIndex === -1 || emailListData.length === 0) {
+                setStatusMessage('请先从邮件列表中选择一封邮件', 'error');
+                return;
+            }
+
+            const email = emailListData[selectedEmailIndex];
+            // 优先使用真正的Message-ID
+            const emailId = email.messageId || email.id || '';
+
+            if (emailId) {
+                document.getElementById('deleteMailId').value = emailId;
+                setStatusMessage('已填充选中邮件的Message-ID', 'success');
+                console.log(`填充的Message-ID: ${emailId}`);
+            } else {
+                setStatusMessage('选中邮件没有有效的ID', 'error');
+            }
+        }
+
+        // 删除选中的邮件
+        async function deleteSelectedEmail() {
+            if (selectedEmailIndex === -1 || emailListData.length === 0) {
+                setStatusMessage('请先从邮件列表中选择一封邮件', 'error');
+                return;
+            }
+
+            const email = emailListData[selectedEmailIndex];
+            // 智能选择ID：
+            // - 如果 id 以 'imap_' 开头，说明是IMAP模式生成的临时ID，应使用 messageId（RFC 822 Message-ID）
+            // - 否则使用 id（Graph API 的邮件ID）
+            let emailId;
+            if (email.id && email.id.startsWith('imap_')) {
+                emailId = email.messageId || email.id;
+                console.log('检测到IMAP模式，使用 messageId');
+            } else {
+                emailId = email.id || email.messageId || '';
+                console.log('检测到Graph API模式，使用 id');
+            }
+
+            if (!emailId) {
+                setStatusMessage('选中邮件没有有效的ID，无法删除', 'error');
+                return;
+            }
+
+            console.log(`准备删除邮件，使用ID: ${emailId}`);
+
+            if (!confirm(`确定要删除选中的邮件吗？\n主题: ${email.subject || '无主题'}\n发件人: ${email.from || email.send || 'Unknown'}\n\n此操作不可恢复！`)) {
+                return;
+            }
+
+            const mailbox = mailboxes[selectedMailboxIndex];
+            setStatusMessage('正在删除选中邮件...', 'loading');
+
+            const apiPassword = document.getElementById('apiPassword').value;
+            // 获取当前选择的文件夹
+            const currentFolder = document.getElementById('mailboxFolderList').value;
+
+            try {
+                // 获取API基础地址
+                const apiBaseUrl = document.getElementById('apiBaseUrl').value.trim();
+
+                // 检查用户是否填写了API地址
+                if (!apiBaseUrl) {
+                    throw new Error('请先填写API地址后再尝试');
+                }
+
+                // 使用delete-mail API进行单个邮件删除
+                let apiUrl = `${apiBaseUrl}/delete-mail?refresh_token=${encodeURIComponent(mailbox.refresh_token)}&client_id=${encodeURIComponent(mailbox.client_id)}&email=${encodeURIComponent(mailbox.email)}&message_id=${encodeURIComponent(emailId)}&mailbox=${encodeURIComponent(currentFolder)}`;
+
+                // 如果有设置密码，添加到URL中
+                if (apiPassword) {
+                    apiUrl += `&password=${encodeURIComponent(apiPassword)}`;
+                }
+
+                console.log('发送删除选中邮件请求到:', apiUrl);
+                console.log(`使用delete-mail API删除单个邮件（文件夹: ${currentFolder}）`);
+                const response = await fetch(apiUrl);
+
+                if (!response.ok) {
+                    throw new Error(`API请求失败: ${response.status} ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                console.log('收到的删除结果:', data);
+
+                if (data.success) {
+                    setStatusMessage('选中邮件删除成功', 'success');
+                    // 刷新邮件列表
+                    loadEmailList();
+                    // 清除邮件显示
+                    clearEmailDisplay();
+                } else {
+                    setStatusMessage('邮件删除失败: ' + (data.error || '未知错误'), 'error');
+                }
+            } catch (error) {
+                console.error('删除选中邮件失败:', error);
+                setStatusMessage('删除选中邮件失败: ' + error.message, 'error');
+            }
+        }
+
+        // 带统计信息的清空收件箱
+        async function clearInboxWithStats() {
+            if (selectedMailboxIndex === -1) {
+                setStatusMessage('请先选择一个邮箱', 'error');
+                return;
+            }
+
+            if (!confirm('确定要清空所选邮箱的收件箱吗？此操作不可恢复！')) {
+                return;
+            }
+
+            const mailbox = mailboxes[selectedMailboxIndex];
+            setStatusMessage('正在清空收件箱...', 'loading');
+
+            const apiPassword = document.getElementById('apiPassword').value;
+
+            try {
+                // 获取API基础地址
+                const apiBaseUrl = document.getElementById('apiBaseUrl').value.trim();
+
+                // 检查用户是否填写了API地址
+                if (!apiBaseUrl) {
+                    throw new Error('请先填写API地址后再尝试');
+                }
+
+                // 使用GET请求
+                let apiUrl = `${apiBaseUrl}/clear-inbox?refresh_token=${encodeURIComponent(mailbox.refresh_token)}&client_id=${encodeURIComponent(mailbox.client_id)}&email=${encodeURIComponent(mailbox.email)}`;
+
+                // 如果有设置密码，添加到URL中
+                if (apiPassword) {
+                    apiUrl += `&password=${encodeURIComponent(apiPassword)}`;
+                }
+
+                console.log('发送清空收件箱请求到:', apiUrl);
+                const response = await fetch(apiUrl);
+
+                if (!response.ok) {
+                    throw new Error(`API请求失败: ${response.status} ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                console.log('收到的清空结果:', data);
+
+                // 显示批量操作结果
+                displayBatchOperationResult(data, '收件箱清空');
+
+                // 清除邮件显示
+                clearEmailDisplay();
+
+                // 清空邮件列表
+                emailListData = [];
+                updateEmailList();
+
+                setStatusMessage('收件箱清空成功', 'success');
+                switchTab('mailManageTab');
+            } catch (error) {
+                console.error('清空收件箱失败:', error);
+                setStatusMessage('清空收件箱失败: ' + error.message, 'error');
+            }
+        }
+
+        // 带统计信息的清空垃圾箱
+        async function clearJunkWithStats() {
+            if (selectedMailboxIndex === -1) {
+                setStatusMessage('请先选择一个邮箱', 'error');
+                return;
+            }
+
+            if (!confirm('确定要清空所选邮箱的垃圾箱吗？此操作不可恢复！')) {
+                return;
+            }
+
+            const mailbox = mailboxes[selectedMailboxIndex];
+            setStatusMessage('正在清空垃圾箱...', 'loading');
+
+            const apiPassword = document.getElementById('apiPassword').value;
+
+            try {
+                // 获取API基础地址
+                const apiBaseUrl = document.getElementById('apiBaseUrl').value.trim();
+
+                // 检查用户是否填写了API地址
+                if (!apiBaseUrl) {
+                    throw new Error('请先填写API地址后再尝试');
+                }
+
+                // 使用GET请求
+                let apiUrl = `${apiBaseUrl}/clear-junk?refresh_token=${encodeURIComponent(mailbox.refresh_token)}&client_id=${encodeURIComponent(mailbox.client_id)}&email=${encodeURIComponent(mailbox.email)}`;
+
+                // 如果有设置密码，添加到URL中
+                if (apiPassword) {
+                    apiUrl += `&password=${encodeURIComponent(apiPassword)}`;
+                }
+
+                console.log('发送清空垃圾箱请求到:', apiUrl);
+                const response = await fetch(apiUrl);
+
+                if (!response.ok) {
+                    throw new Error(`API请求失败: ${response.status} ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                console.log('收到的清空结果:', data);
+
+                // 显示批量操作结果
+                displayBatchOperationResult(data, '垃圾箱清空');
+
+                // 清除邮件显示
+                clearEmailDisplay();
+
+                // 清空邮件列表
+                emailListData = [];
+                updateEmailList();
+
+                setStatusMessage('垃圾箱清空成功', 'success');
+                switchTab('mailManageTab');
+            } catch (error) {
+                console.error('清空垃圾箱失败:', error);
+                setStatusMessage('清空垃圾箱失败: ' + error.message, 'error');
+            }
+        }
+
+        // 显示批量操作结果
+        function displayBatchOperationResult(data, operationType) {
+            const resultElement = document.getElementById('batchOperationResult');
+
+            // 更新统计信息
+            document.getElementById('batchMode').textContent = data.mode || 'unknown';
+            document.getElementById('batchMode').style.color = data.mode === 'graph' ? '#0066cc' : data.mode === 'imap' ? '#cc6600' : '#666';
+
+            if (data.stats) {
+                document.getElementById('batchTotal').textContent = data.stats.total || '0';
+                document.getElementById('batchDeleted').textContent = data.stats.deleted || '0';
+                document.getElementById('batchFailed').textContent = data.stats.failed || '0';
+            } else {
+                document.getElementById('batchTotal').textContent = '-';
+                document.getElementById('batchDeleted').textContent = '-';
+                document.getElementById('batchFailed').textContent = '-';
+            }
+
+            // 显示详细信息
+            document.getElementById('batchOperationDetails').textContent = `${operationType}操作完成\n\n${JSON.stringify(data, null, 2)}`;
+
+            // 显示结果区域
+            resultElement.style.display = 'block';
+        }
+
+        // 复制当前邮箱地址到剪贴板
+        function copyCurrentEmail() {
+            if (selectedMailboxIndex === -1 || !mailboxes[selectedMailboxIndex]) {
+                setStatusMessage('没有选中的邮箱', 'error');
+                return;
+            }
+
+            const email = mailboxes[selectedMailboxIndex].email;
+
+            // 使用现代的 Clipboard API
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(email).then(() => {
+                    setStatusMessage(`已复制邮箱地址: ${email}`, 'success');
+                }).catch(err => {
+                    console.error('复制失败:', err);
+                    fallbackCopyTextToClipboard(email);
+                });
+            } else {
+                // 降级方案
+                fallbackCopyTextToClipboard(email);
+            }
+        }
+
+        // 降级复制方案
+        function fallbackCopyTextToClipboard(text) {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+
+            // 避免滚动到底部
+            textArea.style.top = "0";
+            textArea.style.left = "0";
+            textArea.style.position = "fixed";
+            textArea.style.opacity = "0";
+
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    setStatusMessage(`已复制邮箱地址: ${text}`, 'success');
+                } else {
+                    setStatusMessage('复制失败，请手动复制', 'error');
+                }
+            } catch (err) {
+                console.error('降级复制失败:', err);
+                setStatusMessage('复制失败，请手动复制', 'error');
+            }
+
+            document.body.removeChild(textArea);
+        }
+
+        // 显示邮箱凭据模态框
+        function showCredentialsModal(mailboxIndex) {
+            if (mailboxIndex < 0 || mailboxIndex >= mailboxes.length) {
+                setStatusMessage('邮箱索引无效', 'error');
+                return;
+            }
+
+            const mailbox = mailboxes[mailboxIndex];
+
+            // 填充模态框内容
+            document.getElementById('modalEmail').textContent = mailbox.email;
+            document.getElementById('modalPassword').textContent = mailbox.password;
+            document.getElementById('modalClientId').textContent = mailbox.client_id;
+            document.getElementById('modalRefreshToken').textContent = mailbox.refresh_token;
+
+            // 显示模态框
+            const modal = document.getElementById('credentialsModal');
+            modal.classList.add('show');
+
+            // 添加点击外部关闭功能
+            modal.onclick = (e) => {
+                if (e.target === modal) {
+                    closeCredentialsModal();
+                }
+            };
+        }
+
+        // 关闭邮箱凭据模态框
+        function closeCredentialsModal() {
+            const modal = document.getElementById('credentialsModal');
+            modal.classList.remove('show');
+
+            // 清除点击事件
+            modal.onclick = null;
+        }
+
+        // 复制到剪贴板功能
+        function copyToClipboard(elementId, buttonElement) {
+            const element = document.getElementById(elementId);
+            const text = element.textContent;
+
+            if (!text) {
+                setStatusMessage('没有内容可复制', 'error');
+                return;
+            }
+
+            // 尝试使用现代的 Clipboard API
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).then(() => {
+                    showCopySuccess(buttonElement);
+                    setStatusMessage('已复制到剪贴板', 'success');
+                }).catch(err => {
+                    console.error('复制失败:', err);
+                    fallbackCopyToClipboard(text, buttonElement);
+                });
+            } else {
+                // 降级方案
+                fallbackCopyToClipboard(text, buttonElement);
+            }
+        }
+
+        // 降级复制方案
+        function fallbackCopyToClipboard(text, buttonElement) {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            textArea.style.top = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    showCopySuccess(buttonElement);
+                    setStatusMessage('已复制到剪贴板', 'success');
+                } else {
+                    setStatusMessage('复制失败，请手动复制', 'error');
+                }
+            } catch (err) {
+                console.error('降级复制失败:', err);
+                setStatusMessage('复制失败，请手动复制', 'error');
+            }
+
+            document.body.removeChild(textArea);
+        }
+
+        // 显示复制成功状态
+        function showCopySuccess(buttonElement) {
+            const originalText = buttonElement.textContent;
+            buttonElement.textContent = '已复制';
+            buttonElement.classList.add('copied');
+
+            setTimeout(() => {
+                buttonElement.textContent = originalText;
+                buttonElement.classList.remove('copied');
+            }, 2000);
+        }
+
+        // 添加键盘事件监听，按ESC键关闭模态框
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('credentialsModal');
+                if (modal.classList.contains('show')) {
+                    closeCredentialsModal();
+                }
+                const groupModal = document.getElementById('groupManageModal');
+                if (groupModal.classList.contains('show')) {
+                    closeGroupManageModal();
+                }
+            }
+        });
+
+        // ========== 分组管理相关函数 ==========
+
+        // 根据邮箱地址获取默认分组
+        function getDefaultGroupForEmail(email) {
+            const domain = email.split('@')[1];
+            if (!domain) return '未分组';
+
+            // 微软邮箱域名映射
+            const domainMap = {
+                'outlook.com': 'Outlook邮箱',
+                'hotmail.com': 'Hotmail邮箱',
+                'live.com': 'Live邮箱',
+                'msn.com': 'MSN邮箱',
+                'outlook.fr': 'Outlook法国',
+                'outlook.de': 'Outlook德国',
+                'outlook.jp': 'Outlook日本',
+                'outlook.co.uk': 'Outlook英国'
+            };
+
+            return domainMap[domain] || '其他微软邮箱';
+        }
+
+        // 切换分组折叠状态
+        function toggleGroupCollapse(groupName) {
+            groupCollapsedStates[groupName] = !groupCollapsedStates[groupName];
+            saveGroupStates();
+            updateMailboxList();
+        }
+
+        // 移动邮箱到指定分组
+        function moveMailboxToGroup(mailboxIndex, targetGroup) {
+            if (mailboxIndex < 0 || mailboxIndex >= mailboxes.length) return;
+
+            const oldGroup = mailboxes[mailboxIndex].group;
+            if (oldGroup === targetGroup) return;
+
+            mailboxes[mailboxIndex].group = targetGroup;
+            saveMailboxesToStorage();
+            updateMailboxList();
+            setStatusMessage(`已将邮箱移动到 "${targetGroup}"`, 'success');
+        }
+
+        // 搜索过滤邮箱
+        function filterMailboxes() {
+            updateMailboxList();
+        }
+
+        // 打开分组管理模态框
+        function openGroupManageModal() {
+            updateGroupList();
+            document.getElementById('groupManageModal').classList.add('show');
+        }
+
+        // 关闭分组管理模态框
+        function closeGroupManageModal() {
+            document.getElementById('groupManageModal').classList.remove('show');
+            document.getElementById('newGroupNameInput').value = '';
+        }
+
+        // 更新分组列表显示
+        function updateGroupList() {
+            const container = document.getElementById('groupListContainer');
+            container.innerHTML = '';
+
+            // 统计每个分组的邮箱数量
+            const groupCounts = {};
+            mailboxes.forEach(mailbox => {
+                const group = mailbox.group || '未分组';
+                groupCounts[group] = (groupCounts[group] || 0) + 1;
+            });
+
+            // 合并邮箱中的分组和mailboxGroups中的空分组
+            const allGroups = new Set([...Object.keys(groupCounts), ...mailboxGroups]);
+            const groups = Array.from(allGroups).sort();
+
+            if (groups.length === 0) {
+                container.innerHTML = '<div class="no-group-hint">暂无分组</div>';
+                return;
+            }
+
+            groups.forEach(groupName => {
+                const itemWrapper = document.createElement('div');
+
+                const item = document.createElement('div');
+                item.className = 'group-list-item';
+
+                const nameSpan = document.createElement('span');
+                nameSpan.className = 'group-list-item-name';
+                nameSpan.textContent = groupName;
+
+                const countSpan = document.createElement('span');
+                countSpan.className = 'group-list-item-count';
+                countSpan.textContent = `(${groupCounts[groupName] || 0})`;
+
+                const leftDiv = document.createElement('div');
+                leftDiv.appendChild(nameSpan);
+                leftDiv.appendChild(countSpan);
+
+                // 为"未分组"添加展开/折叠按钮
+                if (groupName === '未分组' && groupCounts[groupName] > 0) {
+                    const expandToggle = document.createElement('span');
+                    expandToggle.className = 'expand-toggle';
+                    expandToggle.textContent = '▼ 展开';
+                    expandToggle.dataset.expanded = 'false';
+                    leftDiv.appendChild(expandToggle);
+                }
+
+                const actionsDiv = document.createElement('div');
+                actionsDiv.className = 'group-list-item-actions';
+
+                if (groupName !== '未分组') {
+                    const renameBtn = document.createElement('button');
+                    renameBtn.className = 'small-btn';
+                    renameBtn.textContent = '重命名';
+                    renameBtn.onclick = () => renameGroup(groupName);
+
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'small-btn warning';
+                    deleteBtn.textContent = '删除';
+                    deleteBtn.onclick = () => deleteGroup(groupName);
+
+                    actionsDiv.appendChild(renameBtn);
+                    actionsDiv.appendChild(deleteBtn);
+                }
+
+                item.appendChild(leftDiv);
+                item.appendChild(actionsDiv);
+                itemWrapper.appendChild(item);
+
+                // 为"未分组"添加邮箱列表和操作区域
+                if (groupName === '未分组' && groupCounts[groupName] > 0) {
+                    const ungroupedContainer = document.createElement('div');
+                    ungroupedContainer.className = 'ungrouped-mailboxes';
+                    ungroupedContainer.style.display = 'none';
+
+                    // 获取所有未分组的邮箱
+                    const ungroupedMailboxes = mailboxes.filter(m => !m.group || m.group === '未分组');
+
+                    ungroupedMailboxes.forEach((mailbox, index) => {
+                        const mailboxItem = document.createElement('div');
+                        mailboxItem.className = 'ungrouped-mailbox-item';
+
+                        const checkbox = document.createElement('input');
+                        checkbox.type = 'checkbox';
+                        checkbox.id = `ungrouped-${index}`;
+                        checkbox.dataset.email = mailbox.email;
+
+                        const label = document.createElement('label');
+                        label.htmlFor = `ungrouped-${index}`;
+                        label.textContent = mailbox.email;
+
+                        mailboxItem.appendChild(checkbox);
+                        mailboxItem.appendChild(label);
+                        ungroupedContainer.appendChild(mailboxItem);
+                    });
+
+                    // 添加操作按钮区域
+                    const actionsContainer = document.createElement('div');
+                    actionsContainer.className = 'ungrouped-actions';
+
+                    const selectAllBtn = document.createElement('button');
+                    selectAllBtn.className = 'small-btn';
+                    selectAllBtn.textContent = '全选';
+                    selectAllBtn.onclick = () => toggleSelectAll(ungroupedContainer, true);
+
+                    const deselectAllBtn = document.createElement('button');
+                    deselectAllBtn.className = 'small-btn';
+                    deselectAllBtn.textContent = '反选';
+                    deselectAllBtn.onclick = () => toggleSelectAll(ungroupedContainer, false);
+
+                    const targetGroupSelect = document.createElement('select');
+                    targetGroupSelect.innerHTML = '<option value="">选择目标分组...</option>';
+
+                    // 获取所有可用分组(合并后再去重,避免重复)
+                    const availableGroups = [...new Set([...mailboxes.map(m => m.group || '未分组'), ...mailboxGroups])]
+                        .filter(g => g !== '未分组')
+                        .sort();
+
+                    availableGroups.forEach(g => {
+                        const option = document.createElement('option');
+                        option.value = g;
+                        option.textContent = g;
+                        targetGroupSelect.appendChild(option);
+                    });
+
+                    const moveSelectedBtn = document.createElement('button');
+                    moveSelectedBtn.className = 'small-btn primary';
+                    moveSelectedBtn.textContent = '移动选中';
+                    moveSelectedBtn.onclick = () => moveSelectedMailboxes(ungroupedContainer, targetGroupSelect);
+
+                    actionsContainer.appendChild(selectAllBtn);
+                    actionsContainer.appendChild(deselectAllBtn);
+                    actionsContainer.appendChild(targetGroupSelect);
+                    actionsContainer.appendChild(moveSelectedBtn);
+
+                    ungroupedContainer.appendChild(actionsContainer);
+                    itemWrapper.appendChild(ungroupedContainer);
+
+                    // 添加展开/折叠事件
+                    const expandToggle = leftDiv.querySelector('.expand-toggle');
+                    expandToggle.onclick = () => {
+                        const isExpanded = expandToggle.dataset.expanded === 'true';
+                        if (isExpanded) {
+                            ungroupedContainer.style.display = 'none';
+                            expandToggle.textContent = '▼ 展开';
+                            expandToggle.dataset.expanded = 'false';
+                        } else {
+                            ungroupedContainer.style.display = 'block';
+                            expandToggle.textContent = '▲ 收起';
+                            expandToggle.dataset.expanded = 'true';
+                        }
+                    };
+                }
+
+                container.appendChild(itemWrapper);
+            });
+        }
+
+        // 创建新分组
+        function createNewGroup() {
+            const input = document.getElementById('newGroupNameInput');
+            const groupName = input.value.trim();
+
+            if (!groupName) {
+                setStatusMessage('请输入分组名称', 'error');
+                return;
+            }
+
+            // 检查分组是否已存在
+            const existingGroups = [...new Set(mailboxes.map(m => m.group || '未分组')), ...mailboxGroups];
+            if (existingGroups.includes(groupName)) {
+                setStatusMessage('分组已存在', 'error');
+                return;
+            }
+
+            // 添加到mailboxGroups数组
+            mailboxGroups.push(groupName);
+            saveGroupStates();
+
+            setStatusMessage(`分组 "${groupName}" 已创建，可以拖拽邮箱到此分组`, 'success');
+            input.value = '';
+            updateGroupList();
+            updateMailboxList(); // 更新邮箱列表以显示新分组
+        }
+
+        // 重命名分组
+        function renameGroup(oldName) {
+            const newName = prompt(`重命名分组 "${oldName}"`, oldName);
+            if (!newName || newName.trim() === '' || newName === oldName) return;
+
+            const trimmedName = newName.trim();
+
+            // 检查新名称是否已存在
+            const existingGroups = [...new Set(mailboxes.map(m => m.group || '未分组')), ...mailboxGroups];
+            if (existingGroups.includes(trimmedName)) {
+                setStatusMessage('分组名称已存在', 'error');
+                return;
+            }
+
+            // 更新所有属于该分组的邮箱
+            let count = 0;
+            mailboxes.forEach(mailbox => {
+                if (mailbox.group === oldName) {
+                    mailbox.group = trimmedName;
+                    count++;
+                }
+            });
+
+            // 更新mailboxGroups数组
+            const index = mailboxGroups.indexOf(oldName);
+            if (index > -1) {
+                mailboxGroups[index] = trimmedName;
+            }
+
+            // 更新折叠状态
+            if (groupCollapsedStates[oldName] !== undefined) {
+                groupCollapsedStates[trimmedName] = groupCollapsedStates[oldName];
+                delete groupCollapsedStates[oldName];
+            }
+
+            saveMailboxesToStorage();
+            saveGroupStates();
+            updateMailboxList();
+            updateGroupList();
+            setStatusMessage(`已将 ${count} 个邮箱从 "${oldName}" 重命名为 "${trimmedName}"`, 'success');
+        }
+
+        // 删除分组（提供选项：仅删除分组或删除分组及邮箱）
+        function deleteGroup(groupName) {
+            // 统计该分组下的邮箱数量
+            const mailboxCount = mailboxes.filter(m => m.group === groupName).length;
+
+            // 如果是空分组,直接删除
+            if (mailboxCount === 0) {
+                deleteEmptyGroup(groupName);
+                return;
+            }
+
+            // 非空分组,显示选项对话框
+            showDeleteGroupDialog(groupName, mailboxCount);
+        }
+
+        // 删除空分组
+        function deleteEmptyGroup(groupName) {
+            if (!confirm(`确定要删除空分组 "${groupName}" 吗?`)) return;
+
+            // 从mailboxGroups数组中移除
+            const index = mailboxGroups.indexOf(groupName);
+            if (index > -1) {
+                mailboxGroups.splice(index, 1);
+            }
+
+            delete groupCollapsedStates[groupName];
+
+            saveMailboxesToStorage();
+            saveGroupStates();
+            updateMailboxList();
+            updateGroupList();
+            setStatusMessage(`已删除空分组 "${groupName}"`, 'success');
+        }
+
+        // 显示删除分组选项对话框
+        function showDeleteGroupDialog(groupName, mailboxCount) {
+            // 创建模态框
+            const modal = document.createElement('div');
+            modal.className = 'delete-group-modal';
+            modal.innerHTML = `
+                <div class="delete-group-dialog">
+                    <h3>删除分组 "${groupName}"</h3>
+                    <p class="mailbox-count">该分组有 <strong>${mailboxCount}</strong> 个邮箱,请选择:</p>
+
+                    <div class="delete-options">
+                        <label class="delete-option">
+                            <input type="radio" name="deleteOption" value="moveToUngrouped" checked>
+                            <div class="option-content">
+                                <div class="option-title">仅删除分组,邮箱移入"未分组"</div>
+                                <div class="option-desc">(邮箱保留,可重新分组)</div>
+                            </div>
+                        </label>
+
+                        <label class="delete-option danger">
+                            <input type="radio" name="deleteOption" value="deleteAll">
+                            <div class="option-content">
+                                <div class="option-title">删除分组及所有邮箱</div>
+                                <div class="option-desc warning">⚠️ 邮箱将永久删除,不可恢复!</div>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div class="dialog-buttons">
+                        <button class="cancel-btn">取消</button>
+                        <button class="confirm-btn">确认</button>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
+
+            // 绑定事件
+            const cancelBtn = modal.querySelector('.cancel-btn');
+            const confirmBtn = modal.querySelector('.confirm-btn');
+
+            cancelBtn.onclick = () => {
+                document.body.removeChild(modal);
+            };
+
+            confirmBtn.onclick = () => {
+                const selectedOption = modal.querySelector('input[name="deleteOption"]:checked').value;
+                document.body.removeChild(modal);
+
+                if (selectedOption === 'moveToUngrouped') {
+                    deleteGroupMoveMailboxes(groupName, mailboxCount);
+                } else {
+                    deleteGroupAndMailboxes(groupName, mailboxCount);
+                }
+            };
+
+            // 点击背景关闭
+            modal.onclick = (e) => {
+                if (e.target === modal) {
+                    document.body.removeChild(modal);
+                }
+            };
+        }
+
+        // 仅删除分组,邮箱移入未分组
+        function deleteGroupMoveMailboxes(groupName, mailboxCount) {
+            mailboxes.forEach(mailbox => {
+                if (mailbox.group === groupName) {
+                    mailbox.group = '未分组';
+                }
+            });
+
+            // 从mailboxGroups数组中移除
+            const index = mailboxGroups.indexOf(groupName);
+            if (index > -1) {
+                mailboxGroups.splice(index, 1);
+            }
+
+            delete groupCollapsedStates[groupName];
+
+            saveMailboxesToStorage();
+            saveGroupStates();
+            updateMailboxList();
+            updateGroupList();
+            setStatusMessage(`已删除分组 "${groupName}",${mailboxCount} 个邮箱已移入未分组`, 'success');
+        }
+
+        // 删除分组及所有邮箱
+        function deleteGroupAndMailboxes(groupName, mailboxCount) {
+            // 删除该分组下的所有邮箱
+            for (let i = mailboxes.length - 1; i >= 0; i--) {
+                if (mailboxes[i].group === groupName) {
+                    mailboxes.splice(i, 1);
+                }
+            }
+
+            // 从mailboxGroups数组中移除
+            const index = mailboxGroups.indexOf(groupName);
+            if (index > -1) {
+                mailboxGroups.splice(index, 1);
+            }
+
+            delete groupCollapsedStates[groupName];
+
+            saveMailboxesToStorage();
+            saveGroupStates();
+            updateMailboxList();
+            updateGroupList();
+            setStatusMessage(`已删除分组 "${groupName}" 及 ${mailboxCount} 个邮箱`, 'warning');
+        }
+
+        // 全选/反选未分组邮箱
+        function toggleSelectAll(container, selectAll) {
+            const checkboxes = container.querySelectorAll('input[type="checkbox"]');
+            if (selectAll) {
+                checkboxes.forEach(cb => cb.checked = true);
+            } else {
+                checkboxes.forEach(cb => cb.checked = !cb.checked);
+            }
+        }
+
+        // 移动选中的邮箱
+        function moveSelectedMailboxes(container, targetGroupSelect) {
+            const targetGroup = targetGroupSelect.value;
+            if (!targetGroup) {
+                setStatusMessage('请选择目标分组', 'error');
+                return;
+            }
+
+            const checkboxes = container.querySelectorAll('input[type="checkbox"]:checked');
+            if (checkboxes.length === 0) {
+                setStatusMessage('请至少选择一个邮箱', 'error');
+                return;
+            }
+
+            const selectedEmails = Array.from(checkboxes).map(cb => cb.dataset.email);
+            let count = 0;
+
+            mailboxes.forEach(mailbox => {
+                if (selectedEmails.includes(mailbox.email)) {
+                    mailbox.group = targetGroup;
+                    count++;
+                }
+            });
+
+            saveMailboxesToStorage();
+            updateMailboxList();
+            updateGroupList();
+            setStatusMessage(`已将 ${count} 个邮箱移动到 "${targetGroup}"`, 'success');
+        }
+
+        // 批量移动未分组邮箱(旧版本,保留兼容性)
+        function batchMoveUngrouped() {
+            // 获取所有未分组的邮箱
+            const ungroupedMailboxes = mailboxes.filter(m => !m.group || m.group === '未分组');
+
+            if (ungroupedMailboxes.length === 0) {
+                setStatusMessage('没有未分组的邮箱', 'info');
+                return;
+            }
+
+            // 获取所有可用的分组（排除"未分组"）
+            const allGroups = [...new Set(mailboxes.map(m => m.group || '未分组')), ...mailboxGroups];
+            const availableGroups = allGroups.filter(g => g !== '未分组').sort();
+
+            if (availableGroups.length === 0) {
+                setStatusMessage('请先创建分组', 'error');
+                return;
+            }
+
+            // 构建选择对话框的选项
+            let message = `选择目标分组，将 ${ungroupedMailboxes.length} 个未分组邮箱移动到:\n\n`;
+            availableGroups.forEach((group, index) => {
+                message += `${index + 1}. ${group}\n`;
+            });
+            message += '\n请输入分组编号:';
+
+            const input = prompt(message);
+            if (!input) return;
+
+            const groupIndex = parseInt(input) - 1;
+            if (isNaN(groupIndex) || groupIndex < 0 || groupIndex >= availableGroups.length) {
+                setStatusMessage('无效的分组编号', 'error');
+                return;
+            }
+
+            const targetGroup = availableGroups[groupIndex];
+            let count = 0;
+
+            mailboxes.forEach(mailbox => {
+                if (!mailbox.group || mailbox.group === '未分组') {
+                    mailbox.group = targetGroup;
+                    count++;
+                }
+            });
+
+            saveMailboxesToStorage();
+            updateMailboxList();
+            updateGroupList();
+            closeGroupManageModal();
+            setStatusMessage(`已将 ${count} 个邮箱移动到 "${targetGroup}"`, 'success');
+        }
+
+        // 自动按域名分组
+        function autoGroupByDomain() {
+            if (!confirm('确定要按域名自动分组吗？\n这将覆盖现有的分组设置。')) return;
+
+            mailboxes.forEach(mailbox => {
+                mailbox.group = getDefaultGroupForEmail(mailbox.email);
+            });
+
+            saveMailboxesToStorage();
+            updateMailboxList();
+            updateGroupList();
+            setStatusMessage('已按域名自动分组', 'success');
+        }
+
+        // 保存分组折叠状态
+        function saveGroupStates() {
+            try {
+                localStorage.setItem('groupCollapsedStates', JSON.stringify(groupCollapsedStates));
+                localStorage.setItem('mailboxGroups', JSON.stringify(mailboxGroups));
+            } catch (error) {
+                console.error('保存分组状态失败:', error);
+            }
+        }
+
+        // 加载分组折叠状态
+        function loadGroupStates() {
+            try {
+                const saved = localStorage.getItem('groupCollapsedStates');
+                if (saved) {
+                    groupCollapsedStates = JSON.parse(saved);
+                }
+                const savedGroups = localStorage.getItem('mailboxGroups');
+                if (savedGroups) {
+                    mailboxGroups = JSON.parse(savedGroups);
+                }
+            } catch (error) {
+                console.error('加载分组状态失败:', error);
+            }
+        }
+
+        // 在页面加载时加载分组状态
+        loadGroupStates();
+
+
+    </script>
+</body>
+</html>

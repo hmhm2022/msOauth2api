@@ -32,6 +32,7 @@ desktop.ini
 # 环境变量文件
 .env
 .env.local
+.env copy
 
 # 测试文件
 test_*.py
@@ -71,3 +72,11 @@ yarn-error.log*
 # Cline 配置和记忆文件
 .clinerules
 .cunzhi-memory
+
+temp/
+docs/
+.clinerules
+changes/
+.serena/
+.claude/
+CLAUDE.md
