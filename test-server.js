@@ -17,6 +17,7 @@ app.use(express.static('public'));
 // 加载所有 API 端点
 const apis = [
     { path: '/api/token-info', file: './api/token-info', name: 'token-info' },
+    { path: '/api/token-refresh', file: './api/token-refresh', name: 'token-refresh' },
     { path: '/api/mail-new', file: './api/mail-new', name: 'mail-new' },
     { path: '/api/mail-all', file: './api/mail-all', name: 'mail-all' },
     { path: '/api/send-mail', file: './api/send-mail', name: 'send-mail' },
@@ -46,6 +47,7 @@ app.get('/health', (req, res) => {
         message: 'msOauth2api 本地测试服务器运行正常',
         timestamp: new Date().toISOString(),
         apis: [
+            '/api/token-refresh',
             '/api/mail-new',
             '/api/mail-all',
             '/api/send-mail',
@@ -77,8 +79,9 @@ app.listen(PORT, () => {
     console.log(`  GET/POST /api/mail-new     - 获取最新邮件`);
     console.log(`  GET/POST /api/mail-all     - 获取全部邮件`);
     console.log(`  GET/POST /api/send-mail    - 发送邮件`);
-    console.log(`  GET/POST /api/clear-inbox  - 清空收件箱`);
-    console.log(`  GET/POST /api/clear-junk   - 清空垃圾箱`);
-    console.log(`  GET/POST /api/token-info   - Token 权限检测`);
-    console.log(`  GET/POST /api/delete-mail  - 删除单个邮件`);
-});
+        console.log(`  GET/POST /api/clear-inbox  - 清空收件箱`);
+        console.log(`  GET/POST /api/clear-junk   - 清空垃圾箱`);
+        console.log(`  GET/POST /api/token-info   - Token 权限检测`);
+        console.log(`  GET/POST /api/token-refresh - 刷新 Refresh Token`);
+        console.log(`  GET/POST /api/delete-mail  - 删除单个邮件`);
+    });

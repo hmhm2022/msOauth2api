@@ -2,11 +2,11 @@
   "name": "msOauth2api",
   "version": "1.0.0",
   "description": "微软 OAuth2 API 无服务器版本",
-  "main": "test-api.js",
+  "main": "test-server.js",
   "scripts": {
-    "start": "node test-api.js",
-    "dev": "node test-api.js",
-    "test": "node test-api.js",
+    "start": "node test-server.js",
+    "dev": "node test-server.js",
+    "test": "node test-server.js",
     "vercel-dev": "vercel dev"
   },
   "dependencies": {

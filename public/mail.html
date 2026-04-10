@@ -464,10 +464,10 @@
                     </div>
                     <div class="flex items-center gap-3">
                         <template x-if="selectedMailbox">
-                            <div class="flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-lg">
+                            <div @click="copyToClipboard(selectedMailbox.email)" title="点击复制邮箱地址" class="flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-lg cursor-pointer hover:bg-primary/15 transition">
                                 <i class="fas fa-user-circle text-primary"></i>
                                 <span class="text-sm font-medium text-primary" x-text="selectedMailbox?.email || ''"></span>
-                                <button @click="selectedMailbox = null" class="text-slate-400 hover:text-slate-600 ml-2">
+                                <button @click.stop="selectedMailbox = null" class="text-slate-400 hover:text-slate-600 ml-2">
                                     <i class="fas fa-times text-xs"></i>
                                 </button>
                             </div>
@@ -481,7 +481,7 @@
                 <!-- 账户看板页面 -->
                 <div x-show="currentPage === 'dashboard'" x-cloak class="page-enter">
                     <!-- 统计卡片 -->
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4 mb-6">
                         <div class="stat-card">
                             <div class="flex items-center justify-between">
                                 <div>
@@ -523,6 +523,42 @@
                                 </div>
                                 <div class="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center">
                                     <i class="fas fa-question text-slate-600"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-slate-500 mb-1">RT 正常</p>
+                                    <p class="stat-value" x-text="rtHealthyCount"></p>
+                                    <p class="text-xs text-slate-500 mt-1">距到期超过 7 天</p>
+                                </div>
+                                <div class="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center">
+                                    <i class="fas fa-circle-check text-emerald-600"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-slate-500 mb-1">RT 临期</p>
+                                    <p class="stat-value" x-text="rtExpiringCount"></p>
+                                    <p class="text-xs text-slate-500 mt-1">7 天内建议处理</p>
+                                </div>
+                                <div class="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center">
+                                    <i class="fas fa-hourglass-half text-amber-600"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-slate-500 mb-1">RT 异常</p>
+                                    <p class="stat-value" x-text="rtRiskCount"></p>
+                                    <p class="text-xs text-slate-500 mt-1">已过期或状态未知</p>
+                                </div>
+                                <div class="w-12 h-12 rounded-xl bg-rose-100 flex items-center justify-center">
+                                    <i class="fas fa-triangle-exclamation text-rose-600"></i>
                                 </div>
                             </div>
                         </div>
@@ -611,11 +647,20 @@
                                             <p class="text-xs" :class="getApiTypeDisplay(mailbox.apiType).textClass" x-text="getApiTypeDisplay(mailbox.apiType).label"></p>
                                         </div>
                                     </div>
-                                    <div class="flex items-center justify-between">
-                                        <span class="tag-badge text-xs" :class="mailbox.group ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-600'" x-text="mailbox.group || '默认'"></span>
-                                        <button @click.stop="deleteMailbox(mailbox)" class="text-slate-400 hover:text-red-500 transition p-1.5 rounded-lg hover:bg-red-50">
-                                            <i class="fas fa-trash-alt text-xs"></i>
-                                        </button>
+                                    <div class="space-y-2">
+                                        <div class="flex flex-wrap items-center gap-2">
+                                            <span class="tag-badge text-xs" :class="mailbox.group ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-600'" x-text="mailbox.group || '默认'"></span>
+                                            <span class="tag-badge text-xs font-medium" :class="getRTStatusDisplay(mailbox).badgeClass" :title="`刷新时间：${formatRTObtainedAt(mailbox)}`" x-text="`RT ${getRTStatusDisplay(mailbox).label}`"></span>
+                                        </div>
+                                        <div class="flex items-center justify-between">
+                                            <button @click.stop="refreshRT(mailbox)" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 hover:text-emerald-800 transition text-xs" title="刷新 RT">
+                                                <i class="fas fa-rotate-right text-[10px]"></i>
+                                                <span>刷新 RT</span>
+                                            </button>
+                                            <button @click.stop="deleteMailbox(mailbox)" class="text-slate-400 hover:text-red-500 transition p-1.5 rounded-lg hover:bg-red-50" title="删除">
+                                                <i class="fas fa-trash-alt text-xs"></i>
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </template>
@@ -682,7 +727,8 @@
                                         <th class="text-left py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">邮箱地址</th>
                                         <th class="text-left py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">API 类型</th>
                                         <th class="text-left py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">分组</th>
-                                        <th class="text-left py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider w-32">操作</th>
+                                        <th class="text-left py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">RT 状态</th>
+                                        <th class="text-left py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider w-48">操作</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -744,9 +790,21 @@
                                                 </div>
                                             </td>
                                             <td class="py-3 px-4">
+                                                <div class="flex flex-col gap-1">
+                                                    <span class="tag-badge text-xs w-fit"
+                                                          :class="getRTStatusDisplay(mailbox).badgeClass"
+                                                          :title="`刷新时间：${formatRTObtainedAt(mailbox)}`"
+                                                          x-text="getRTStatusDisplay(mailbox).label"></span>
+                                                    <p class="text-xs text-slate-400" x-text="formatRTExpiry(mailbox)"></p>
+                                                </div>
+                                            </td>
+                                            <td class="py-3 px-4">
                                                 <div class="flex items-center gap-1">
                                                     <button @click.stop="openMailboxEmails(mailbox)" class="p-2 rounded-lg hover:bg-blue-100 text-blue-600 transition" title="查看邮件">
                                                         <i class="fas fa-envelope-open text-sm"></i>
+                                                    </button>
+                                                    <button @click.stop="refreshRT(mailbox)" class="p-2 rounded-lg hover:bg-emerald-100 text-emerald-600 transition" title="刷新 RT">
+                                                        <i class="fas fa-rotate-right text-sm"></i>
                                                     </button>
                                                     <button @click.stop="viewCredentials(mailbox)" class="p-2 rounded-lg hover:bg-slate-100 text-slate-500 transition" title="查看凭据">
                                                         <i class="fas fa-key text-sm"></i>
@@ -798,9 +856,15 @@
                                                     </div>
                                                     <div class="flex-1 min-w-0">
                                                         <p class="text-sm font-medium text-slate-800 truncate" x-text="mailbox.email"></p>
-                                                        <span class="tag-badge text-xs"
-                                                              :class="getApiTypeDisplay(mailbox.apiType).badgeClass"
-                                                              x-text="getApiTypeDisplay(mailbox.apiType).label"></span>
+                                                        <div class="flex flex-wrap items-center gap-2 mt-1">
+                                                            <span class="tag-badge text-xs"
+                                                                  :class="getApiTypeDisplay(mailbox.apiType).badgeClass"
+                                                                  x-text="getApiTypeDisplay(mailbox.apiType).label"></span>
+                                                            <span class="tag-badge text-xs"
+                                                                  :class="getRTStatusDisplay(mailbox).badgeClass"
+                                                                  :title="`刷新时间：${formatRTObtainedAt(mailbox)}`"
+                                                                  x-text="`RT ${getRTStatusDisplay(mailbox).label}`"></span>
+                                                        </div>
                                                     </div>
                                                 </div>
                                                 <div class="flex items-center gap-2 flex-shrink-0">
@@ -812,6 +876,9 @@
                                                     </button>
                                                     <button @click.stop="openMailboxEmails(mailbox)" class="p-2 rounded-lg hover:bg-blue-100 text-blue-600 transition" title="查看邮件">
                                                         <i class="fas fa-envelope-open text-sm"></i>
+                                                    </button>
+                                                    <button @click.stop="refreshRT(mailbox)" class="p-2 rounded-lg hover:bg-emerald-100 text-emerald-600 transition" title="刷新 RT">
+                                                        <i class="fas fa-rotate-right text-sm"></i>
                                                     </button>
                                                     <button @click.stop="viewCredentials(mailbox)" class="p-2 rounded-lg hover:bg-slate-100 text-slate-500 transition" title="查看凭据">
                                                         <i class="fas fa-key text-sm"></i>
@@ -1551,6 +1618,18 @@
                     };
                     return descs[this.currentPage] || '';
                 },
+                get rtHealthyCount() {
+                    return this.mailboxes.filter(mailbox => this.computeRTStatus(mailbox) === 'valid').length;
+                },
+                get rtExpiringCount() {
+                    return this.mailboxes.filter(mailbox => this.computeRTStatus(mailbox) === 'expiring_soon').length;
+                },
+                get rtRiskCount() {
+                    return this.mailboxes.filter(mailbox => {
+                        const status = this.computeRTStatus(mailbox);
+                        return status === 'expired' || status === 'unknown';
+                    }).length;
+                },
                 get filteredMailboxes() {
                     return this.mailboxes.filter(m => {
                         const matchSearch = !this.searchQuery || m.email.toLowerCase().includes(this.searchQuery.toLowerCase());
@@ -1598,6 +1677,7 @@
                 // 初始化
                 init() {
                     this.loadFromStorage();
+                    this.checkRTExpirationOnLoad();
                 },
 
                 // 存储
@@ -1704,13 +1784,83 @@
 
                     return displayMap[normalized] || displayMap.unknown;
                 },
-                normalizeMailboxData(mailbox, fallbackGroup = '') {
+                computeRTStatus(mailbox) {
+                    if (mailbox?.rt_last_error === 'reauthorization_required') {
+                        return 'reauthorization_required';
+                    }
+
+                    const expiresAt = mailbox?.rt_expires_at ? new Date(mailbox.rt_expires_at) : null;
+                    if (!expiresAt || Number.isNaN(expiresAt.getTime())) {
+                        return 'unknown';
+                    }
+
+                    const daysUntilExpiry = (expiresAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24);
+                    if (daysUntilExpiry < 0) return 'expired';
+                    if (daysUntilExpiry <= 7) return 'expiring_soon';
+                    return 'valid';
+                },
+                formatRTExpiry(mailbox) {
+                    const expiresAt = mailbox?.rt_expires_at ? new Date(mailbox.rt_expires_at) : null;
+                    if (!expiresAt || Number.isNaN(expiresAt.getTime())) {
+                        return '未知';
+                    }
+
+                    const daysUntilExpiry = Math.ceil((expiresAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+                    if (daysUntilExpiry < 0) return '疑似已过期';
+                    if (daysUntilExpiry === 0) return '今天到期';
+                    if (daysUntilExpiry <= 7) return `${daysUntilExpiry} 天内到期`;
+                    return '有效';
+                },
+                formatRTObtainedAt(mailbox) {
+                    const obtainedAt = mailbox?.rt_obtained_at ? new Date(mailbox.rt_obtained_at) : null;
+                    if (!obtainedAt || Number.isNaN(obtainedAt.getTime())) {
+                        return '暂无记录';
+                    }
+                    return obtainedAt.toLocaleString('zh-CN');
+                },
+                getRTStatusDisplay(mailbox) {
+                    const status = this.computeRTStatus(mailbox);
+                    if (status === 'reauthorization_required') {
+                        return {
+                            label: '需要重新授权',
+                            badgeClass: 'bg-rose-100 text-rose-700'
+                        };
+                    }
+                    if (status === 'expired') {
+                        return {
+                            label: '疑似已过期',
+                            badgeClass: 'bg-rose-100 text-rose-700'
+                        };
+                    }
+                    if (status === 'expiring_soon') {
+                        return {
+                            label: this.formatRTExpiry(mailbox),
+                            badgeClass: 'bg-amber-100 text-amber-700'
+                        };
+                    }
+                    if (status === 'valid') {
+                        return {
+                            label: '有效',
+                            badgeClass: 'bg-emerald-100 text-emerald-700'
+                        };
+                    }
                     return {
-                        ...mailbox,
+                        label: '未知',
+                        badgeClass: 'bg-slate-100 text-slate-600'
+                    };
+                },
+                normalizeMailboxData(mailbox, fallbackGroup = '') {
+                    const { last_auto_refresh_at: _legacyLastAutoRefreshAt, ...normalizedMailbox } = mailbox || {};
+                    return {
+                        ...normalizedMailbox,
                         email: typeof mailbox?.email === 'string' ? mailbox.email.trim() : '',
                         password: typeof mailbox?.password === 'string' ? mailbox.password.trim() : '',
                         client_id: typeof mailbox?.client_id === 'string' ? mailbox.client_id.trim() : '',
                         refresh_token: typeof mailbox?.refresh_token === 'string' ? mailbox.refresh_token.trim() : '',
+                        rt_obtained_at: typeof mailbox?.rt_obtained_at === 'string' ? mailbox.rt_obtained_at : null,
+                        rt_expires_at: typeof mailbox?.rt_expires_at === 'string' ? mailbox.rt_expires_at : null,
+                        rt_last_error: typeof mailbox?.rt_last_error === 'string' ? mailbox.rt_last_error : null,
+                        rt_last_error_at: typeof mailbox?.rt_last_error_at === 'string' ? mailbox.rt_last_error_at : null,
                         apiType: this.normalizeApiType(mailbox?.apiType),
                         group: this.normalizeGroupName(mailbox?.group ?? fallbackGroup)
                     };
@@ -1802,6 +1952,57 @@
                         throw new Error(errorMessage);
                     }
                     return res.json();
+                },
+                applyTokenInfoToMailbox(email, tokenInfo) {
+                    if (!tokenInfo) return;
+
+                    const emailKey = this.normalizeEmail(email);
+                    const mailbox = this.mailboxes.find(item => this.normalizeEmail(item.email) === emailKey);
+                    if (!mailbox) return;
+
+                    const now = new Date().toISOString();
+
+                    if (tokenInfo.rt_was_refreshed && tokenInfo.new_refresh_token) {
+                        mailbox.refresh_token = tokenInfo.new_refresh_token;
+                        mailbox.rt_obtained_at = now;
+                        mailbox.rt_expires_at = tokenInfo.rt_expires_at || mailbox.rt_expires_at;
+                        mailbox.rt_last_error = null;
+                        mailbox.rt_last_error_at = null;
+                    }
+
+                    if (tokenInfo.rt_reauth_required) {
+                        mailbox.rt_last_error = 'reauthorization_required';
+                        mailbox.rt_last_error_at = now;
+                    }
+
+                    this.saveToStorage();
+                },
+                checkRTExpirationOnLoad() {
+                    const expiredCount = this.mailboxes.filter(mailbox => {
+                        const status = this.computeRTStatus(mailbox);
+                        return status === 'expired' || status === 'reauthorization_required';
+                    }).length;
+                    const expiringSoonCount = this.mailboxes.filter(mailbox => this.computeRTStatus(mailbox) === 'expiring_soon').length;
+
+                    if (expiredCount === 0 && expiringSoonCount === 0) {
+                        return;
+                    }
+
+                    const parts = [];
+                    if (expiredCount > 0) {
+                        parts.push(`${expiredCount} 个邮箱 RT 疑似已过期`);
+                    }
+                    if (expiringSoonCount > 0) {
+                        parts.push(`${expiringSoonCount} 个邮箱 RT 7 天内到期`);
+                    }
+
+                    this.showConfirmDialog(
+                        'warning',
+                        'RT 风险提醒',
+                        `${parts.join('，')}，建议及时手动刷新或重新授权。`,
+                        '知道了',
+                        null
+                    );
                 },
 
                 // 邮箱管理
@@ -2074,6 +2275,30 @@
                         if (mailboxKey) {
                             this.pendingApiTypeDetections.delete(mailboxKey);
                         }
+                    }
+                },
+                async refreshRT(mailbox) {
+                    if (!mailbox) {
+                        return;
+                    }
+                    try {
+                        const result = await this.apiCall('/token-refresh', {
+                            email: mailbox.email,
+                            client_id: mailbox.client_id,
+                            refresh_token: mailbox.refresh_token,
+                            password: this.settings.apiPassword
+                        });
+                        this.applyTokenInfoToMailbox(mailbox.email, result?.token_info);
+                        this.showToast(`已刷新 ${mailbox.email} 的 RT`, 'success');
+                    } catch (err) {
+                        const requiresReauth = /re-authorization required|reauthorization required|invalid_grant|AADSTS70008|AADSTS700082/i.test(err.message || '');
+                        if (requiresReauth) {
+                            this.applyTokenInfoToMailbox(mailbox.email, {
+                                rt_was_refreshed: false,
+                                rt_reauth_required: true
+                            });
+                        }
+                        this.showToast('刷新 RT 失败: ' + err.message, 'error');
                     }
                 },
                 async detectAllApiTypes() {
