@@ -416,27 +416,27 @@
 
             <!-- 导航菜单 -->
             <nav class="flex-1 p-3 space-y-1 overflow-y-auto">
-                <div class="sidebar-nav-item" :class="currentPage === 'dashboard' ? 'active' : ''" @click="currentPage = 'dashboard'">
+                <div class="sidebar-nav-item" :class="currentPage === 'dashboard' ? 'active' : ''" @click="switchPage('dashboard')">
                     <i class="fas fa-th-large w-5"></i>
                     <span>账户看板</span>
                 </div>
-                <div class="sidebar-nav-item" :class="currentPage === 'mailboxes' ? 'active' : ''" @click="currentPage = 'mailboxes'">
+                <div class="sidebar-nav-item" :class="currentPage === 'mailboxes' ? 'active' : ''" @click="switchPage('mailboxes')">
                     <i class="fas fa-inbox w-5"></i>
                     <span>邮箱管理</span>
                 </div>
-                <div class="sidebar-nav-item" :class="currentPage === 'emails' ? 'active' : ''" @click="navigateToEmails()">
+                <div class="sidebar-nav-item" :class="currentPage === 'emails' ? 'active' : ''" @click="switchPage('emails')">
                     <i class="fas fa-envelope-open w-5"></i>
                     <span>邮件列表</span>
                 </div>
-                <div class="sidebar-nav-item" :class="currentPage === 'compose' ? 'active' : ''" @click="currentPage = 'compose'">
+                <div class="sidebar-nav-item" :class="currentPage === 'compose' ? 'active' : ''" @click="switchPage('compose')">
                     <i class="fas fa-paper-plane w-5"></i>
                     <span>发送邮件</span>
                 </div>
-                <div class="sidebar-nav-item" :class="currentPage === 'batch' ? 'active' : ''" @click="currentPage = 'batch'">
+                <div class="sidebar-nav-item" :class="currentPage === 'batch' ? 'active' : ''" @click="switchPage('batch')">
                     <i class="fas fa-upload w-5"></i>
                     <span>批量导入</span>
                 </div>
-                <div class="sidebar-nav-item" :class="currentPage === 'settings' ? 'active' : ''" @click="currentPage = 'settings'">
+                <div class="sidebar-nav-item" :class="currentPage === 'settings' ? 'active' : ''" @click="switchPage('settings')">
                     <i class="fas fa-cog w-5"></i>
                     <span>系统设置</span>
                 </div>
@@ -577,7 +577,7 @@
                                 </div>
                                 <span class="text-sm text-slate-600">添加邮箱</span>
                             </button>
-                            <button @click="currentPage = 'batch'" class="flex flex-col items-center gap-2 p-4 rounded-xl border border-slate-200 hover:border-primary hover:bg-primary/5 transition">
+                            <button @click="switchPage('batch')" class="flex flex-col items-center gap-2 p-4 rounded-xl border border-slate-200 hover:border-primary hover:bg-primary/5 transition">
                                 <div class="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
                                     <i class="fas fa-upload text-purple-600"></i>
                                 </div>
@@ -695,7 +695,7 @@
                                 <button @click="showAddModal = true" class="btn-primary">
                                     <i class="fas fa-plus mr-2"></i>添加邮箱
                                 </button>
-                                <button @click="currentPage = 'batch'" class="btn-primary">
+                                <button @click="switchPage('batch')" class="btn-primary">
                                     <i class="fas fa-upload mr-2"></i>批量导入
                                 </button>
                             </div>
@@ -908,7 +908,7 @@
                         </div>
                         <h3 class="text-lg font-medium text-slate-600 mb-2">请先选择一个邮箱</h3>
                         <p class="text-slate-400 mb-4">在左侧选择一个邮箱来查看邮件</p>
-                        <button @click="currentPage = 'mailboxes'" class="btn-primary">
+                        <button @click="switchPage('mailboxes')" class="btn-primary">
                             <i class="fas fa-list mr-2"></i>前往邮箱管理
                         </button>
                     </div>
@@ -1077,7 +1077,7 @@
                             <div x-show="!selectedMailbox" class="text-center py-8 text-slate-400 bg-slate-50 rounded-xl mb-6">
                                 <i class="fas fa-exclamation-circle text-2xl mb-2"></i>
                                 <p>请先选择发件邮箱</p>
-                                <button @click="currentPage = 'mailboxes'" class="btn-secondary mt-3">去选择邮箱</button>
+                                <button @click="switchPage('mailboxes')" class="btn-secondary mt-3">去选择邮箱</button>
                             </div>
 
                             <div x-show="selectedMailbox" class="space-y-4">
@@ -1521,6 +1521,7 @@
             return {
                 // 页面状态
                 currentPage: 'dashboard',
+                pageRoutes: ['dashboard', 'mailboxes', 'emails', 'compose', 'batch', 'settings'],
                 loading: false,
                 sending: false,
 
@@ -1587,6 +1588,7 @@
 
                 // Toast
                 toast: { show: false, message: '', type: 'info' },
+                hashChangeHandler: null,
 
                 // API 类型检测中的邮箱
                 pendingApiTypeDetections: new Set(),
@@ -1679,6 +1681,57 @@
                 init() {
                     this.loadFromStorage();
                     this.checkRTExpirationOnLoad();
+                    this.$watch('currentPage', page => this.syncHash(page));
+                    if (!this.hashChangeHandler) {
+                        this.hashChangeHandler = () => this.restorePageFromHash({ replaceHistory: true });
+                        window.addEventListener('hashchange', this.hashChangeHandler);
+                    }
+                    this.restorePageFromHash({ replaceHistory: true });
+                },
+                getHashForPage(page) {
+                    return page === 'dashboard' ? '#/' : `#/${page}`;
+                },
+                parsePageFromHash() {
+                    const page = window.location.hash.replace(/^#\/?/, '').trim();
+                    return page || 'dashboard';
+                },
+                isValidPage(page) {
+                    return this.pageRoutes.includes(page);
+                },
+                restorePageFromHash(options = {}) {
+                    const { replaceHistory = false } = options;
+                    const requestedPage = this.parsePageFromHash();
+                    let targetPage = this.isValidPage(requestedPage) ? requestedPage : 'dashboard';
+
+                    if (this.currentPage !== targetPage) {
+                        this.currentPage = targetPage;
+                    }
+
+                    this.syncHash(targetPage, { replaceHistory });
+                },
+                syncHash(page = this.currentPage, options = {}) {
+                    const { replaceHistory = false } = options;
+                    const targetPage = this.isValidPage(page) ? page : 'dashboard';
+                    const nextHash = this.getHashForPage(targetPage);
+
+                    if (window.location.hash === nextHash) {
+                        return;
+                    }
+
+                    if (replaceHistory) {
+                        history.replaceState(null, '', `${window.location.pathname}${window.location.search}${nextHash}`);
+                        return;
+                    }
+
+                    window.location.hash = nextHash;
+                },
+                switchPage(page) {
+                    if (page === 'emails') {
+                        this.navigateToEmails();
+                        return;
+                    }
+
+                    this.currentPage = this.isValidPage(page) ? page : 'dashboard';
                 },
 
                 // 存储
