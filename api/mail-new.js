@@ -50,6 +50,23 @@ async function get_emails(access_token, mailbox) {
 
 }
 
+function buildResponseData(mail, seqno) {
+    const generatedId = `imap_${seqno}_${Date.now()}`;
+    const headerMessageId = mail?.headers?.get?.('message-id');
+
+    return {
+        id: generatedId,
+        messageId: mail?.messageId || headerMessageId || generatedId,
+        send: mail?.from?.text || '',
+        subject: mail?.subject || '',
+        text: mail?.text || '',
+        html: mail?.html || '',
+        date: mail?.date || null,
+        mode: 'imap',
+        _imapSeqno: seqno
+    };
+}
+
 module.exports = async (req, res) => {
 
     const { password } = req.method === 'GET' ? req.query : req.body;
@@ -108,11 +125,28 @@ module.exports = async (req, res) => {
             xoauth2: authString,
             host: 'outlook.office365.com',
             port: 993,
-            tls: true,
-            tlsOptions: {
-                rejectUnauthorized: false
-            }
+            tls: true
         });
+
+        let responseHandled = false;
+
+        const sendJsonResponse = (statusCode, data) => {
+            if (responseHandled) {
+                return;
+            }
+
+            responseHandled = true;
+            res.status(statusCode).json(data);
+        };
+
+        const sendHtmlResponse = (html) => {
+            if (responseHandled) {
+                return;
+            }
+
+            responseHandled = true;
+            res.status(200).send(html);
+        };
 
         imap.once("ready", async () => {
             try {
@@ -132,68 +166,75 @@ module.exports = async (req, res) => {
                     });
                 });
 
-                const f = imap.fetch(results, { bodies: "" });
+                const responseData = await new Promise((resolve, reject) => {
+                    let hasParsedMail = false;
+                    const f = imap.fetch(results, { bodies: "" });
 
-                f.on("message", (msg, seqno) => {
-                    msg.on("body", (stream, info) => {
-                        simpleParser(stream, (err, mail) => {
-                            if (err) throw err;
-                            const responseData = {
-                                id: `imap_${seqno}_${Date.now()}`, // 生成唯一ID
-                                messageId: mail.messageId || mail.headers.get('message-id') || `imap_${seqno}_${Date.now()}`, // 完整的Message-ID
-                                send: mail.from.text,
-                                subject: mail.subject,
-                                text: mail.text,
-                                html: mail.html,
-                                date: mail.date,
-                                mode: 'imap', // 标识使用的模式
-                                _imapSeqno: seqno // 保存IMAP序列号用于删除操作
-                            };
+                    f.on("message", (msg, seqno) => {
+                        msg.on("body", (stream) => {
+                            simpleParser(stream, (err, mail) => {
+                                if (err) {
+                                    return reject(new Error(`Failed to parse message ${seqno}: ${err.message}`));
+                                }
 
-                            // 根据 response_type 返回 JSON 或 HTML
-                            if (response_type === 'json') {
-                                res.status(200).json(responseData);
-                            } else if (response_type === 'html') {
-                                // 格式化 HTML 响应
-                                const htmlResponse = `
-                                    <html>
-                                        <body style="font-family: Arial, sans-serif; line-height: 1.6; margin: 0; padding: 20px; background-color: #f9f9f9;">
-                                            <div style="margin: 0 auto; background: #fff; padding: 20px; border: 1px solid #ddd; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-                                                <h1 style="color: #333;">邮件信息</h1>
-                                                <p><strong>邮件ID:</strong> ${responseData.id}</p>
-                                                <p><strong>Message-ID:</strong> ${responseData.messageId}</p>
-                                                <p><strong>模式:</strong> ${responseData.mode}</p>
-                                                <p><strong>发件人:</strong> ${responseData.send}</p>
-                                                <p><strong>主题:</strong> ${responseData.subject}</p>
-                                                <p><strong>日期:</strong> ${responseData.date}</p>
-                                                <div style="background: #f4f4f4; padding: 10px; border: 1px solid #ddd;">
-                                                    <p><strong>内容:</strong></p>
-                                                    <p>${responseData.text.replace(/\n/g, '<br>')}</p>
-                                                </div>
-                                            </div>
-                                        </body>
-                                    </html>
-                                `;
-                                res.status(200).send(htmlResponse);
-                            } else {
-                                res.status(400).json({ error: 'Invalid response_type. Use "json" or "html".' });
-                            }
+                                try {
+                                    const responseData = buildResponseData(mail, seqno);
+                                    hasParsedMail = true;
+                                    resolve(responseData);
+                                } catch (parseError) {
+                                    reject(new Error(`Failed to normalize message ${seqno}: ${parseError.message}`));
+                                }
+                            });
                         });
+                    });
+
+                    f.once("error", reject);
+                    f.once("end", () => {
+                        if (!hasParsedMail) {
+                            reject(new Error('No email content was parsed'));
+                        }
                     });
                 });
 
-                f.once("end", () => {
-                    imap.end();
-                });
+                imap.end();
+
+                if (response_type === 'json') {
+                    return sendJsonResponse(200, responseData);
+                }
+
+                if (response_type === 'html') {
+                    const htmlResponse = `
+                        <html>
+                            <body style="font-family: Arial, sans-serif; line-height: 1.6; margin: 0; padding: 20px; background-color: #f9f9f9;">
+                                <div style="margin: 0 auto; background: #fff; padding: 20px; border: 1px solid #ddd; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                                    <h1 style="color: #333;">邮件信息</h1>
+                                    <p><strong>邮件ID:</strong> ${responseData.id}</p>
+                                    <p><strong>Message-ID:</strong> ${responseData.messageId}</p>
+                                    <p><strong>模式:</strong> ${responseData.mode}</p>
+                                    <p><strong>发件人:</strong> ${responseData.send}</p>
+                                    <p><strong>主题:</strong> ${responseData.subject}</p>
+                                    <p><strong>日期:</strong> ${responseData.date}</p>
+                                    <div style="background: #f4f4f4; padding: 10px; border: 1px solid #ddd;">
+                                        <p><strong>内容:</strong></p>
+                                        <p>${responseData.text.replace(/\n/g, '<br>')}</p>
+                                    </div>
+                                </div>
+                            </body>
+                        </html>
+                    `;
+                    return sendHtmlResponse(htmlResponse);
+                }
+
+                return sendJsonResponse(400, { error: 'Invalid response_type. Use "json" or "html".' });
             } catch (err) {
                 imap.end();
-                res.status(500).json({ error: err.message });
+                sendJsonResponse(500, { error: err.message });
             }
         });
 
         imap.once('error', (err) => {
             console.error('IMAP error:', err);
-            res.status(500).json({ error: err.message });
+            sendJsonResponse(500, { error: err.message });
         });
 
         imap.connect();

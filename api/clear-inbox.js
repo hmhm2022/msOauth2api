@@ -42,6 +42,7 @@ module.exports = async (req, res) => {
 // Graph API模式处理函数
 async function processInboxGraphAPI(access_token, res) {
     try {
+        const deleteBatchSize = 20;
 
         // 使用 Microsoft Graph API 获取收件箱中的所有邮件
         async function getAllMessages() {
@@ -108,14 +109,22 @@ async function processInboxGraphAPI(access_token, res) {
         let deletedCount = 0;
         let failedCount = 0;
 
-        for (const message of messages) {
-            try {
-                await deleteMessage(message.id);
-                deletedCount++;
-            } catch (error) {
-                console.error(`Error deleting message ${message.id}:`, error);
+        for (let index = 0; index < messages.length; index += deleteBatchSize) {
+            const messageBatch = messages.slice(index, index + deleteBatchSize);
+            const deleteResults = await Promise.allSettled(
+                messageBatch.map(message => deleteMessage(message.id))
+            );
+
+            deleteResults.forEach((result, batchIndex) => {
+                if (result.status === 'fulfilled') {
+                    deletedCount++;
+                    return;
+                }
+
+                const message = messageBatch[batchIndex];
+                console.error(`Error deleting message ${message.id}:`, result.reason);
                 failedCount++;
-            }
+            });
         }
 
         console.log(`[Graph API] Deleted ${deletedCount} messages, failed to delete ${failedCount} messages`);
@@ -148,10 +157,7 @@ async function processInboxIMAP(refresh_token, client_id, email, res) {
             xoauth2: authString,
             host: 'outlook.office365.com',
             port: 993,
-            tls: true,
-            tlsOptions: {
-                rejectUnauthorized: false
-            }
+            tls: true
         });
 
         let deletedCount = 0;

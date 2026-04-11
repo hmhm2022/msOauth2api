@@ -1917,25 +1917,19 @@
                 },
 
                 // API调用
-                async apiCall(endpoint, params = {}, options = {}) {
+                async apiCall(endpoint, params = {}) {
                     if (!this.settings.apiBaseUrl) throw new Error('请先配置 API 地址');
-                    const method = (options.method || 'POST').toUpperCase();
                     const url = new URL(this.settings.apiBaseUrl + endpoint);
                     const filteredParams = Object.fromEntries(
                         Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== '')
                     );
-                    const fetchOptions = { method };
-
-                    if (method === 'GET') {
-                        Object.entries(filteredParams).forEach(([k, v]) => {
-                            url.searchParams.append(k, v);
-                        });
-                    } else {
-                        fetchOptions.headers = {
+                    const fetchOptions = {
+                        method: 'POST',
+                        headers: {
                             'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
-                        };
-                        fetchOptions.body = new URLSearchParams(filteredParams).toString();
-                    }
+                        },
+                        body: new URLSearchParams(filteredParams).toString()
+                    };
 
                     const res = await fetch(url, fetchOptions);
                     if (!res.ok) {
@@ -2263,7 +2257,7 @@
                             client_id: mailbox.client_id,
                             refresh_token: mailbox.refresh_token,
                             password: this.settings.apiPassword
-                        }, { method: 'GET' });
+                        });
                         const primaryMode = result?.tokenInfo?.primaryMode || result?.primary_mode || result?.primaryMode || 'unknown';
                         mailbox.apiType = this.normalizeApiType(primaryMode);
                         this.saveToStorage();
@@ -2336,7 +2330,7 @@
                             refresh_token: this.selectedMailbox.refresh_token,
                             mailbox: this.selectedFolder,
                             password: this.settings.apiPassword
-                        }, { method: 'GET' });
+                        });
                         this.emails = Array.isArray(data) ? data : [];
                         this.showToast(`加载了 ${this.emails.length} 封邮件`, 'success');
                     } catch (err) {
@@ -2387,7 +2381,7 @@
                                     mode: email.mode || 'graph',
                                     mailbox: this.selectedFolder,
                                     password: this.settings.apiPassword
-                                }, { method: 'GET' });
+                                });
 
                                 // 检查返回结果，失败时回滚
                                 if (result?.success === false) {
@@ -2479,7 +2473,7 @@
                                                 mode: email.mode || 'graph',
                                                 mailbox: requestFolder,
                                                 password: requestPassword
-                                            }, { method: 'GET' });
+                                            });
                                         })
                                     );
 

@@ -95,10 +95,7 @@ async function deleteSingleEmailIMAP(refresh_token, client_id, email, message_id
             xoauth2: authString,
             host: 'outlook.office365.com',
             port: 993,
-            tls: true,
-            tlsOptions: {
-                rejectUnauthorized: false
-            }
+            tls: true
         });
 
         let responseHandled = false;
