@@ -424,7 +424,7 @@
                     <i class="fas fa-inbox w-5"></i>
                     <span>邮箱管理</span>
                 </div>
-                <div class="sidebar-nav-item" :class="currentPage === 'emails' ? 'active' : ''" @click="currentPage = 'emails'">
+                <div class="sidebar-nav-item" :class="currentPage === 'emails' ? 'active' : ''" @click="navigateToEmails()">
                     <i class="fas fa-envelope-open w-5"></i>
                     <span>邮件列表</span>
                 </div>
@@ -467,7 +467,7 @@
                             <div @click="copyToClipboard(selectedMailbox.email)" title="点击复制邮箱地址" class="flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-lg cursor-pointer hover:bg-primary/15 transition">
                                 <i class="fas fa-user-circle text-primary"></i>
                                 <span class="text-sm font-medium text-primary" x-text="selectedMailbox?.email || ''"></span>
-                                <button @click.stop="selectedMailbox = null" class="text-slate-400 hover:text-slate-600 ml-2">
+                                <button @click.stop="clearSelectedMailbox()" class="text-slate-400 hover:text-slate-600 ml-2">
                                     <i class="fas fa-times text-xs"></i>
                                 </button>
                             </div>
@@ -1545,6 +1545,7 @@
                 selectedMailbox: null,
                 selectedEmail: null,
                 viewingMailbox: null,
+                lastLoadedContext: null,
 
                 // 搜索和过滤
                 searchQuery: '',
@@ -2030,16 +2031,44 @@
                         () => {
                             this.mailboxes = this.mailboxes.filter(m => m.email !== mailbox.email);
                             if (this.selectedMailbox?.email === mailbox.email) {
-                                this.selectedMailbox = null;
-                                this.emails = [];
+                                this.clearSelectedMailbox();
                             }
                             this.saveToStorage();
                             this.showToast('邮箱已删除', 'success');
                         }
                     );
                 },
+                resetEmailView() {
+                    this.emails = [];
+                    this.selectedEmail = null;
+                    this.showEmailModal = false;
+                    this.cancelBatchMode();
+                    this.lastLoadedContext = null;
+                    this.loading = false;
+                },
+                clearSelectedMailbox() {
+                    this.selectedMailbox = null;
+                    this.resetEmailView();
+                },
+                isCurrentMailboxLoaded() {
+                    return !!this.selectedMailbox
+                        && !!this.lastLoadedContext
+                        && this.lastLoadedContext.email === this.selectedMailbox.email
+                        && this.lastLoadedContext.folder === this.selectedFolder;
+                },
                 selectMailbox(mailbox) {
+                    const prevEmail = this.selectedMailbox?.email;
                     this.selectedMailbox = mailbox;
+
+                    if (prevEmail !== mailbox?.email) {
+                        this.resetEmailView();
+                    }
+                },
+                async navigateToEmails() {
+                    this.currentPage = 'emails';
+                    if (this.selectedMailbox && !this.isCurrentMailboxLoaded()) {
+                        await this.loadEmails();
+                    }
                 },
                 async openMailboxEmails(mailbox) {
                     if (!mailbox) {
@@ -2321,23 +2350,34 @@
                 // 邮件管理
                 async loadEmails() {
                     if (!this.selectedMailbox || this.batchDeleting) return;
+                    const requestMailbox = this.selectedMailbox;
+                    const requestContext = {
+                        email: requestMailbox.email,
+                        folder: this.selectedFolder
+                    };
                     this.cancelBatchMode();
                     this.loading = true;
                     try {
                         const data = await this.apiCall('/mail-all', {
-                            email: this.selectedMailbox.email,
-                            client_id: this.selectedMailbox.client_id,
-                            refresh_token: this.selectedMailbox.refresh_token,
-                            mailbox: this.selectedFolder,
+                            email: requestMailbox.email,
+                            client_id: requestMailbox.client_id,
+                            refresh_token: requestMailbox.refresh_token,
+                            mailbox: requestContext.folder,
                             password: this.settings.apiPassword
                         });
+                        // 邮箱或文件夹已切换，丢弃过期响应
+                        if (this.selectedMailbox?.email !== requestContext.email || this.selectedFolder !== requestContext.folder) return;
                         this.emails = Array.isArray(data) ? data : [];
+                        this.lastLoadedContext = requestContext;
                         this.showToast(`加载了 ${this.emails.length} 封邮件`, 'success');
                     } catch (err) {
+                        if (this.selectedMailbox?.email !== requestContext.email || this.selectedFolder !== requestContext.folder) return;
                         this.showToast('加载失败: ' + err.message, 'error');
                         this.emails = [];
                     } finally {
-                        this.loading = false;
+                        if (this.selectedMailbox?.email === requestContext.email && this.selectedFolder === requestContext.folder) {
+                            this.loading = false;
+                        }
                     }
                 },
                 selectEmail(email) {
@@ -2719,9 +2759,7 @@
                                 'mailViewMode'
                             ].forEach(key => localStorage.removeItem(key));
                             this.mailboxes = [];
-                            this.emails = [];
-                            this.selectedMailbox = null;
-                            this.selectedEmail = null;
+                            this.clearSelectedMailbox();
                             this.groups = [];
                             this.groupMeta = [];
                             this.currentViewMode = 'list';
